@@ -1,14 +1,37 @@
-// --- GHI NHỚ ĐĂNG NHẬP (DỰ PHÒNG CHO IPHONE) ---
-function setCookie(name, value, days) {
-    const expires = new Date(Date.now() + days * 864e5).toUTCString();
-    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+// --- GHI NHỚ ĐĂNG NHẬP VĨNH VIỄN (DÙNG INDEXEDDB CHO IPHONE) ---
+const DB_NAME = 'nvh_scanner_db';
+const DB_VERSION = 1;
+const STORE_NAME = 'auth_store';
+
+function openDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = (e) => reject(e.target.error);
+    });
 }
 
-function getCookie(name) {
-    return document.cookie.split('; ').reduce((r, v) => {
-        const parts = v.split('=');
-        return parts[0] === name ? decodeURIComponent(parts[1]) : r;
-    }, '');
+async function setAuthToken(value) {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    tx.objectStore(STORE_NAME).put(value, 'nvh_verified');
+    localStorage.setItem('nvh_verified', value); // Dự phòng thêm
+}
+
+async function getAuthToken() {
+    const db = await openDB();
+    return new Promise((resolve) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const request = tx.objectStore(STORE_NAME).get('nvh_verified');
+        request.onsuccess = (e) => resolve(e.target.result);
+        request.onerror = () => resolve(null);
+    });
 }
 
 // Cấu hình URL Google Apps Script chính thức từ bạn
@@ -159,10 +182,8 @@ async function toggleScanner() {
                 cameraConfig,
                 { 
                     fps: 20, 
-                    qrbox: (w, h) => {
-                        const size = Math.min(w, h) * 0.95; // Khung quét rộng 95%
-                        return { width: size, height: size };
-                    },
+                    qrbox: undefined, // Ép quét toàn bộ diện tích Video (v1.8.3)
+                    aspectRatio: 1.0,
                     showViewFinder: false 
                 },
                 onScanSuccess
@@ -600,18 +621,18 @@ function showToast(msg) {
 }
 
 // --- LOGIC BẢO MẬT MÃ PIN ---
-function checkSecurity() {
-    console.log("Đang kiểm tra bảo mật...");
+async function checkSecurity() {
+    console.log("Đang kiểm tra bảo mật (v1.8.3 - IndexedDB)...");
+    const isVerifiedDB = await getAuthToken() === 'true';
     const isVerifiedLocal = localStorage.getItem('nvh_verified') === 'true';
-    const isVerifiedCookie = getCookie('nvh_verified') === 'true';
-    const isVerified = isVerifiedLocal || isVerifiedCookie;
+    const isVerified = isVerifiedDB || isVerifiedLocal;
 
     const modal = document.getElementById('passcode-modal');
     if (isVerified) {
         if (modal) modal.style.display = 'none';
-        // Luôn đảm bảo đồng bộ lại
+        // Luôn đảm bảo đồng bộ lại nếu một nơi bị mất
+        if (!isVerifiedDB) await setAuthToken('true');
         if (!isVerifiedLocal) localStorage.setItem('nvh_verified', 'true');
-        if (!isVerifiedCookie) setCookie('nvh_verified', 'true', 365);
     } else {
         if (modal) {
             modal.style.display = 'flex';
@@ -631,12 +652,12 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-function validatePasscode() {
+async function validatePasscode() {
     const input = document.getElementById('passcode-input').value;
     const errorEl = document.getElementById('passcode-error');
     if (input === '310824') {
         localStorage.setItem('nvh_verified', 'true');
-        setCookie('nvh_verified', 'true', 365); // Lưu cookie 1 năm
+        await setAuthToken('true'); // Lưu vĩnh viễn vào IndexedDB v1.8.3
         document.getElementById('passcode-modal').style.display = 'none';
         showToast("Xác thực thành công!");
         // Khởi tạo mặc định sau xác thực
@@ -644,6 +665,7 @@ function validatePasscode() {
             localStorage.setItem('nvh_sound_type', 'standard');
             localStorage.setItem('nvh_vibrate', 'true');
         }
+        location.reload(); // Reload để áp dụng trạng thái mới
     } else {
         errorEl.style.display = 'block';
         document.getElementById('passcode-input').value = '';
