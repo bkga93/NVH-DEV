@@ -622,92 +622,36 @@ function showToast(msg) {
     }, 2500);
 }
 
-// --- LOGIC BẢO MẬT MÃ PIN ---
-function checkSecurity() {
-    // 0. Kiểm tra quyền chủ động Tắt mật khẩu v1.8.8
-    if (localStorage.getItem('nvh_auth_skip') === 'true') {
-        const modal = document.getElementById('passcode-modal');
-        if (modal) modal.style.display = 'none';
-        document.body.classList.add('auth-success');
-        window.isVerifiedSession = true;
-        return;
+// --- HỆ THỐNG KÍCH HOẠT DIAMOND v2.0.0 ---
+async function checkActivation() {
+    console.log("💎 Đang kiểm tra bản quyền Diamond v2.0.0...");
+    const isActivated = await getAuthToken(); // Tái sử dụng IndexedDB lưu activation
+    const overlay = document.getElementById('activation-overlay');
+    
+    if (isActivated === '310824_KEY_ACTIVATED') {
+        if (overlay) overlay.style.display = 'none';
+        document.body.classList.add('app-activated');
+        return true;
+    } else {
+        if (overlay) overlay.style.display = 'flex';
+        document.body.classList.remove('app-activated');
+        return false;
     }
-
-    // 0.1 Ưu tiên tuyệt đối cờ Session để tránh Loop v1.8.7
-    if (window.isVerifiedSession === true) {
-        const modal = document.getElementById('passcode-modal');
-        if (modal) modal.style.display = 'none';
-        document.body.classList.add('auth-success');
-        return;
-    }
-
-    console.log("Đang kiểm tra bảo mật (v1.8.7 - Session-Safe)...");
-    const isVerifiedLocal = localStorage.getItem('nvh_verified') === 'true';
-    const modal = document.getElementById('passcode-modal');
-
-    // 1. Kiểm tra Local trước (Sync)
-    if (isVerifiedLocal) {
-        if (modal) modal.style.display = 'none';
-        document.body.classList.add('auth-success');
-        window.isVerifiedSession = true; // Kích hoạt cờ session ngay
-        getAuthToken().then(dbVal => { if (dbVal !== 'true') setAuthToken('true'); });
-        return;
-    }
-
-    // 2. Kiểm tra IndexedDB (Async)
-    getAuthToken().then(isVerifiedDB => {
-        if (isVerifiedDB === 'true' || window.isVerifiedSession === true) {
-            if (modal) modal.style.display = 'none';
-            document.body.classList.add('auth-success');
-            localStorage.setItem('nvh_verified', 'true');
-            window.isVerifiedSession = true;
-        } else {
-            if (modal) {
-                modal.style.display = 'flex';
-                const input = document.getElementById('passcode-input');
-                if (input) { input.value = ''; input.focus(); }
-            }
-        }
-    });
 }
 
-// Theo dõi trạng thái Tab để kiểm tra lại Passcode ngay lập tức (Xử lý iPhone Safari)
-document.addEventListener('visibilitychange', () => {
-    // Chỉ kiểm tra lại nếu chưa có cờ Session v1.8.7
-    if (document.visibilityState === 'visible' && !window.isVerifiedSession) {
-        checkSecurity();
-    }
-});
-
-async function validatePasscode() {
-    const input = document.getElementById('passcode-input').value;
-    const errorEl = document.getElementById('passcode-error');
-    if (input === '310824') {
-        // 1. Kích hoạt cờ cứu nguy ngay lập tức v1.8.7
-        window.isVerifiedSession = true;
-        
-        // 2. PHƯƠNG ÁN v1.9.0: Tự động ghi nhớ vĩnh viễn trên máy này
-        localStorage.setItem('nvh_auth_skip', 'true');
-        localStorage.setItem('nvh_verified', 'true');
-        
-        // 3. Ẩn modal cưỡng bức v1.8.6
-        document.body.classList.add('auth-success');
-        const modal = document.getElementById('passcode-modal');
-        if (modal) modal.style.display = 'none';
-        
-        showToast("✔️ Xác thực thành công!");
-        
-        // 4. Âm thầm lưu bền vững ở chế độ nền
-        setAuthToken('true').catch(e => console.error("IDB Save Error:", e));
-        
-        if (localStorage.getItem('nvh_sound_type') === null) {
-            localStorage.setItem('nvh_sound_type', 'standard');
-            localStorage.setItem('nvh_vibrate', 'true');
-        }
+async function activateApp() {
+    const input = document.getElementById('activation-key');
+    const error = document.getElementById('activation-error');
+    const key = input.value.trim();
+    
+    if (key === '310824') {
+        await setAuthToken('310824_KEY_ACTIVATED');
+        showToast("✨ KÍCH HOẠT DIAMOND EDITION THÀNH CÔNG!");
+        setTimeout(() => location.reload(), 1000);
     } else {
-        errorEl.style.display = 'block';
-        document.getElementById('passcode-input').value = '';
-        setTimeout(() => { errorEl.style.display = 'none'; }, 2000);
+        if (error) error.style.display = 'block';
+        input.value = '';
+        input.focus();
     }
 }
 
@@ -1598,6 +1542,59 @@ function stopManualRec() {
     document.querySelector('.pc-right-col').classList.remove('rec-active-mode');
 }
 
+// --- LOGIC RESIZER KÉO THẢ v2.0.0 ---
+function initPCResizer() {
+    const resizer = document.getElementById('pc-resizer-bar');
+    const leftSide = document.getElementById('monitor-1');
+    const rightSide = document.getElementById('monitor-2');
+    
+    if (!resizer || !leftSide || !rightSide) return;
+
+    let x = 0;
+    let leftWidth = 0;
+
+    // Khôi phục tỷ lệ đã lưu
+    const savedPos = localStorage.getItem('nvh_pc_resizer_pos');
+    if (savedPos) {
+        leftSide.style.flex = `0 0 ${savedPos}%`;
+    }
+
+    const onMouseDown = (e) => {
+        x = e.clientX || e.touches[0].clientX;
+        const rect = leftSide.getBoundingClientRect();
+        leftWidth = rect.width;
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('touchmove', onMouseMove);
+        document.addEventListener('touchend', onMouseUp);
+        document.body.style.cursor = 'col-resize';
+    };
+
+    const onMouseMove = (e) => {
+        const currentX = e.clientX || e.touches[0].clientX;
+        const dx = currentX - x;
+        const containerWidth = resizer.parentElement.clientWidth;
+        const newWidthPerc = ((leftWidth + dx) / containerWidth) * 100;
+        
+        if (newWidthPerc > 10 && newWidthPerc < 90) {
+            leftSide.style.flex = `0 0 ${newWidthPerc}%`;
+            localStorage.setItem('nvh_pc_resizer_pos', newWidthPerc);
+        }
+    };
+
+    const onMouseUp = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('touchmove', onMouseMove);
+        document.removeEventListener('touchend', onMouseUp);
+        document.body.style.cursor = 'default';
+    };
+
+    resizer.addEventListener('mousedown', onMouseDown);
+    resizer.addEventListener('touchstart', onMouseDown);
+}
+
 // --- LOGIC RECORDING v1.6.4 ---
 async function initHDD() {
     try {
@@ -1697,34 +1694,32 @@ function isMobileDevice() {
 }
 
 window.onload = () => {
-    // --- BẢN VÁ v1.9.1: BẮT BUỘC RESET ĐỂ NHẬP PASS LẦN ĐẦU TIÊN ---
-    if (localStorage.getItem('nvh_v1.9.1_reset') !== 'done') {
+    // Khởi tạo mặc định
+    if (localStorage.getItem('nvh_v2.0.0_init') !== 'done') {
+        // Xóa các rác cũ bản 1.x
         localStorage.removeItem('nvh_verified');
         localStorage.removeItem('nvh_auth_skip');
-        localStorage.setItem('nvh_v1.9.1_reset', 'done');
-        window.isVerifiedSession = false;
+        localStorage.setItem('nvh_v2.0.0_init', 'done');
     }
 
-    // Khởi tạo mặc định
     if (localStorage.getItem('nvh_sound_type') === null) {
         localStorage.setItem('nvh_sound_type', 'standard');
         localStorage.setItem('nvh_vibrate', 'true');
     }
     
-    // Khôi phục PC Mode - v1.9.5 Auto Detection
+    // Khôi phục PC Mode - v2.0.0
     let savedPCMode = localStorage.getItem('nvh_pc_mode');
     if (savedPCMode === null) {
-        // Tự động bật PC mode nếu màn hình rộng (Tablet/Desktop)
         pcMode = window.innerWidth > 1024;
         localStorage.setItem('nvh_pc_mode', pcMode);
     } else {
         pcMode = savedPCMode === 'true';
     }
 
-    // Áp dụng giao diện PC Pro Mode v1.9.5
     togglePCMode(pcMode);
+    initPCResizer(); // Khởi tạo kéo thả
 
-    checkSecurity();
+    checkActivation(); // Kiểm tra bản quyền
     processSyncQueue();
     fetchDataFromSheets(true); 
     updateLastUpdateTimeDisplay(localStorage.getItem('nvh_last_update'));

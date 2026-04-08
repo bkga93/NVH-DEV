@@ -1007,22 +1007,181 @@ body.pc-mode #mobile-scan-ui { display: none; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 215, 0, 0.2); }
 
 /* --- NEW SCANNER CONTROLS v1.7.2 --- */
-.pc-action-btn {
-    width: 100%;
-    background: linear-gradient(135deg, var(--primary-color), #E6C200);
-    border: none;
-    border-radius: 12px;
-    padding: 15px;
-    color: var(--surface-color);
-    cursor: pointer;
-    transition: all 0.3s;
+/* --- PC PRO MODE LAYOUT v2.0.0 (DIAMOND) --- */
+body.pc-mode {
+    overflow: hidden; /* Ép không cuộn trang chính khi ở PC Mode */
+}
+
+body.pc-mode .app-container {
+    max-width: 100%;
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    margin-bottom: 20px;
+    padding: 0;
 }
+
+body.pc-mode .header { margin-bottom: 0; padding: 10px 20px; }
+
+.pc-layout-wrapper {
+    display: flex;
+    gap: 0; /* Xóa gap để nhường chỗ cho Resizer */
+    width: 100%;
+    flex: 1; /* Chiếm toàn bộ diện tích còn lại */
+    overflow: hidden;
+    background: #110311;
+}
+
+/* Cột Trái: Bảng Quét mã */
+.pc-left-col {
+    flex: 0 0 360px; /* Độ rộng mặc định */
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 20px;
+    border-right: 1px solid rgba(255, 215, 0, 0.1);
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* Cột Phải: Giám sát siêu rộng */
+.pc-right-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    height: 100%;
+}
+
+.pc-monitoring-grid {
+    display: flex; /* Chuyển sang Flex để hỗ trợ Resizer */
+    gap: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.monitor-box {
+    background: #000;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    flex: 1; /* Mỗi bên chiếm 50% mặc định */
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: box-shadow 0.3s;
+}
+
+.monitor-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Tràn đầy khung hình */
+}
+
+/* --- TÍNH NĂNG RESIZER v2.0.0 --- */
+.pc-resizer {
+    width: 8px;
+    background: rgba(255, 215, 0, 0.05);
+    cursor: col-resize;
+    transition: all 0.2s;
+    height: 100%;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-resizer::after {
+    content: "⋮";
+    color: var(--primary-color);
+    font-size: 1.2rem;
+    opacity: 0.3;
+}
+
+.pc-resizer:hover, .pc-resizer:active {
+    background: var(--primary-color);
+    box-shadow: 0 0 15px var(--primary-color);
+}
+
+.pc-resizer:hover::after { opacity: 1; }
+
+/* --- ACTIVATION SCREEN v2.0.0 (PREMIUM GOLD) --- */
+.activation-screen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at center, #2d0b2d 0%, #000 100%);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.activation-card {
+    background: linear-gradient(145deg, #1a051a, #2d0b2d);
+    width: 100%;
+    max-width: 400px;
+    padding: 50px 30px;
+    border-radius: 35px;
+    text-align: center;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.1);
+    animation: goldShimmer 3s infinite alternate;
+}
+
+@keyframes goldShimmer {
+    from { border-color: rgba(255, 215, 0, 0.2); box-shadow: 0 0 40px rgba(0,0,0,0.8); }
+    to { border-color: rgba(255, 215, 0, 0.5); box-shadow: 0 0 60px rgba(255, 215, 0, 0.1); }
+}
+
+.activation-icon-gold { font-size: 4rem; margin-bottom: 25px; filter: drop-shadow(0 0 10px var(--primary-color)); }
+.gold-title { color: var(--primary-color); margin-bottom: 15px; font-weight: 900; letter-spacing: 2px; font-size: 1.6rem; }
+.activation-hint { color: var(--gray-text); font-size: 0.9rem; margin-bottom: 35px; line-height: 1.6; }
+
+.input-activation-group { margin-bottom: 30px; }
+.input-activation-group input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    padding: 18px;
+    color: var(--primary-color);
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 15px;
+    transition: all 0.3s;
+}
+
+.input-activation-group input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+    outline: none;
+}
+
+.btn-activate-gold {
+    width: 100%;
+    padding: 20px;
+    border-radius: 18px;
+    border: none;
+    background: linear-gradient(to right, var(--primary-color), #E6C200);
+    color: #000;
+    font-weight: 900;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.btn-activate-gold:active { transform: scale(0.96); }
+
+.gold-error { color: #FF4477; font-size: 0.85rem; margin-top: 15px; font-weight: 700; }
+.activation-footer-gold { margin-top: 40px; font-size: 0.75rem; color: var(--gray-text); opacity: 0.5; }
+
+/* Ẩn bộ điều khiển Mobile khi ở PC */
+body.pc-mode .activation-card { max-width: 450px; }
 
 .pc-action-btn:active {
     transform: scale(0.98);

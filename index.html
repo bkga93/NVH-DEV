@@ -99,13 +99,17 @@
                                     </div>
                                 </div>
 
-                                <div class="pc-monitoring-grid">
-                                    <div class="monitor-box">
+                                <div class="pc-monitoring-grid" id="pc-monitor-layout">
+                                    <div class="monitor-box" id="monitor-1">
                                         <div class="monitor-label">GÓC 1: CẬN CẢNH (QUÉT)</div>
                                         <video id="pc-video-1" autoplay muted playsinline></video>
                                         <div id="monitor-cam-1" class="monitor-placeholder" style="display: flex;">📷 Camera 1</div>
                                     </div>
-                                    <div class="monitor-box">
+                                    
+                                    <!-- RESIZER BAR v2.0.0 -->
+                                    <div class="pc-resizer" id="pc-resizer-bar"></div>
+
+                                    <div class="monitor-box" id="monitor-2">
                                         <div class="monitor-label">GÓC 2: TOÀN CẢNH</div>
                                         <video id="pc-video-2" autoplay muted playsinline></video>
                                         <div id="monitor-cam-2" class="monitor-placeholder" style="display: flex;">📷 Camera 2</div>
@@ -260,7 +264,7 @@
         </div>
 
         <footer class="footer">
-            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.9.5</span>
+            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 2.0.0 [Diamond Edition]</span>
         </footer>
     </div>
 
@@ -572,18 +576,18 @@
         </div>
     </div>
 
-    <!-- Security Passcode Modal -->
-    <div id="passcode-modal" class="modal-overlay" style="display: flex;">
-        <div class="modal-content passcode-screen">
-            <div class="modal-icon">🔒</div>
-            <h3>Yêu cầu xác thực</h3>
-            <p>Vui lòng nhập mã truy cập để sử dụng hệ thống.</p>
-            <div class="passcode-input-group">
-                <input type="password" id="passcode-input" inputmode="numeric" maxlength="6" placeholder="******">
+    <!-- --- ACTIVATION OVERLAY v2.0.0 (GOLD ERA) --- -->
+    <div id="activation-overlay" class="activation-screen" style="display: none;">
+        <div class="activation-card">
+            <div class="activation-icon-gold">🛡️</div>
+            <h2 class="gold-title">KÍCH HOẠT ỨNG DỤNG</h2>
+            <p class="activation-hint">Nhập KEY kích hoạt để sử dụng TCT APP vĩnh viễn trên thiết bị này.</p>
+            <div class="input-activation-group">
+                <input type="text" id="activation-key" maxlength="6" placeholder="******" autocomplete="off">
             </div>
-            <button class="modal-btn btn-overwrite" onclick="validatePasscode()" style="margin-top: 20px;">XÁC NHẬN</button>
-            <div class="passcode-version">TCT Scanner Pro — Version 1.9.5</div>
-            <p id="passcode-error" style="color: var(--danger); font-size: 0.75rem; margin-top: 10px; display: none;">Mã Pin không chính xác!</p>
+            <button class="btn-activate-gold" onclick="activateApp()">KÍCH HOẠT DIAMOND EDITION</button>
+            <p id="activation-error" class="gold-error" style="display: none;">Key kích hoạt không chính xác!</p>
+            <div class="activation-footer-gold">TCT Scanner Pro — Version 2.0.0 [Diamond Edition]</div>
         </div>
     </div>
 
