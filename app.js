@@ -592,9 +592,19 @@ window.onload = () => {
         localStorage.setItem('nvh_vibrate', 'true');
     }
     
-    // Khôi phục PC Mode nếu trước đó đã bật
-    const savedPCMode = localStorage.getItem('nvh_pc_mode') === 'true';
-    if (savedPCMode && !isMobileDevice()) {
+    // Khôi phục PC Mode: Nếu là máy tính và chưa có thiết lập thì mặc định là bật
+    let savedPCMode = localStorage.getItem('nvh_pc_mode');
+    const isMobile = isMobileDevice();
+
+    if (savedPCMode === null) {
+        // Lần đầu sử dụng trên máy tính -> Mặc định bật
+        savedPCMode = !isMobile;
+        localStorage.setItem('nvh_pc_mode', savedPCMode);
+    } else {
+        savedPCMode = (savedPCMode === 'true');
+    }
+
+    if (savedPCMode && !isMobile) {
         document.getElementById('pc-mode-toggle').checked = true;
         togglePCMode();
     }
