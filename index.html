@@ -216,7 +216,7 @@
         </div>
 
         <footer class="footer">
-            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.8.2</span>
+            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.8.4</span>
         </footer>
     </div>
 
@@ -263,7 +263,7 @@
         </div>
 
         <div class="drawer-footer">
-            <div class="version-info">NVH Scanner Pro — v1.8.2</div>
+            <div class="version-info">NVH Scanner Pro — v1.8.4</div>
         </div>
     </div>
 
@@ -365,6 +365,30 @@
             <div class="changelog-container">
                 <div class="changelog-list">
                     <div class="changelog-item">
+                        <span class="ver-tag">v1.8.4</span>
+                        <ul>
+                            <li><b>Bảo mật:</b> Khắc phục triệt để lỗi "Vòng lặp xác thực" gây ra bởi cơ chế bất đồng bộ của IndexedDB.</li>
+                            <li><b>Giao diện:</b> Thêm thông tin Version vào màn hình yêu cầu mật khẩu.</li>
+                            <li><b>Xác thực:</b> Tối ưu hóa tốc độ kiểm tra quyền truy cập khi App khởi động và quay lại Tab.</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
+                        <span class="ver-tag">v1.8.3</span>
+                        <ul>
+                            <li><b>Bảo mật:</b> Sử dụng IndexedDB để lưu trạng thái đăng nhập, đảm bảo ghi nhớ vĩnh viễn trên iPhone/Safari.</li>
+                            <li><b>Máy quét:</b> Ẩn hoàn toàn vùng quét mờ hình chữ nhật. 4 góc trắng bám khít 100% vào khung vàng ngoài cùng.</li>
+                            <li><b>Quét toàn vùng:</b> Mọi nơi bên trong khung vàng đều có thể quét được mã (Full Area Scan).</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
+                        <span class="ver-tag">v1.8.3</span>
+                        <ul>
+                            <li><b>Bảo mật:</b> Chuyển sang IndexedDB để lưu mật khẩu vĩnh viễn trên iPhone, không bị hỏi lại pass.</li>
+                            <li><b>Máy quét:</b> Ẩn vùng quét mờ hình chữ nhật. 4 góc trắng bám khít 100% vào khung vàng ngoài cùng.</li>
+                            <li><b>Khu vực quét:</b> Mọi vị trí bên trong khung vàng đều có thể quét mã (Full Area).</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
                         <span class="ver-tag">v1.8.2</span>
                         <ul>
                             <li><b>Bảo mật:</b> Ép hệ thống kiểm tra mật khẩu ngay khi mở lại Tab ứng dụng (VisibilityChange).</li>
@@ -436,6 +460,7 @@
                 <input type="password" id="passcode-input" inputmode="numeric" maxlength="6" placeholder="******">
             </div>
             <button class="modal-btn btn-overwrite" onclick="validatePasscode()" style="margin-top: 20px;">XÁC NHẬN</button>
+            <div class="passcode-version">TCT Scanner Pro — Version 1.8.4</div>
             <p id="passcode-error" style="color: var(--danger); font-size: 0.75rem; margin-top: 10px; display: none;">Mã Pin không chính xác!</p>
         </div>
     </div>

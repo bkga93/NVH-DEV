@@ -212,29 +212,34 @@ body {
     filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
 }
 
-/* Phóng to và căn sát các góc quét 1:1 lồng vào khung vàng 95% */
-/* Phóng to và căn sát các góc quét 1:1 lồng vào khung vàng 95% */
-/* Phóng to và căn sát các góc quét 1:1 lọt thỏm vào khung vàng ngoài cùng */
+/* Ép Scanner quét toàn diện tích khung vàng v1.8.3 */
+#reader {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+#reader__scan_region {
+    display: none !important; /* Ẩn vùng quét mờ mặc định của thư viện */
+}
+
+#reader video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* Ép video tràn đầy khung ranh giới */
+    border-radius: 20px;
+}
+
+#reader img {
+    display: none !important;
+}
+
+/* Các góc quét bám khít 100% vào khung vàng ngoài cùng */
 .tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-radius: 20px 0 0 0; }
 .tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-radius: 0 20px 0 0; }
 .bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-radius: 0 0 0 20px; }
 .br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-radius: 0 0 20px 0; }
-
-/* Ẩn triệt để các thành phần tự vẽ của thư viện html5-qrcode để tránh lồng khung */
-#reader__scan_region {
-    border: none !important;
-    background: none !important;
-}
-#reader__scan_region canvas {
-    display: none !important;
-}
-#reader video {
-    border-radius: 20px;
-    object-fit: cover !important;
-}
-#reader img {
-    display: none !important;
-}
 
 /* Controls */
 .controls-container {
@@ -1041,4 +1046,13 @@ input:checked + .slider:before { transform: translateX(20px); }
     text-align: center;
     opacity: 0.6;
     font-family: monospace;
+}
+
+/* Hiển thị Version trong Modal mật khẩu v1.8.4 */
+.passcode-version {
+    font-size: 0.65rem;
+    color: var(--gray-text);
+    margin-top: 15px;
+    opacity: 0.6;
+    text-align: center;
 }

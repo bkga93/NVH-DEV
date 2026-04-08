@@ -622,15 +622,15 @@ function showToast(msg) {
 
 // --- LOGIC BẢO MẬT MÃ PIN ---
 async function checkSecurity() {
-    console.log("Đang kiểm tra bảo mật (v1.8.3 - IndexedDB)...");
-    const isVerifiedDB = await getAuthToken() === 'true';
+    console.log("Đang kiểm tra bảo mật (v1.8.4 - Anti-Loop)...");
     const isVerifiedLocal = localStorage.getItem('nvh_verified') === 'true';
-    const isVerified = isVerifiedDB || isVerifiedLocal;
+    const isVerifiedDB = await getAuthToken() === 'true';
+    const isVerified = isVerifiedLocal || isVerifiedDB;
 
     const modal = document.getElementById('passcode-modal');
     if (isVerified) {
         if (modal) modal.style.display = 'none';
-        // Luôn đảm bảo đồng bộ lại nếu một nơi bị mất
+        // Luôn đảm bảo đồng bộ lại nếu một trong hai bị mất (Tự động sửa lỗi session)
         if (!isVerifiedDB) await setAuthToken('true');
         if (!isVerifiedLocal) localStorage.setItem('nvh_verified', 'true');
     } else {
@@ -656,16 +656,30 @@ async function validatePasscode() {
     const input = document.getElementById('passcode-input').value;
     const errorEl = document.getElementById('passcode-error');
     if (input === '310824') {
+        // 1. Lưu CỰC NHANH vào localStorage để UI qua cửa ngay lập tức v1.8.4
         localStorage.setItem('nvh_verified', 'true');
-        await setAuthToken('true'); // Lưu vĩnh viễn vào IndexedDB v1.8.3
+        
+        // 2. Lưu BỀN VỮNG vào IndexedDB
+        try {
+            await setAuthToken('true');
+        } catch (e) {
+            console.error("IndexedDB error:", e);
+        }
+        
+        // 3. Đóng modal tạm thời gỡ lỗi vòng lặp
         document.getElementById('passcode-modal').style.display = 'none';
         showToast("Xác thực thành công!");
+        
         // Khởi tạo mặc định sau xác thực
         if (localStorage.getItem('nvh_sound_type') === null) {
             localStorage.setItem('nvh_sound_type', 'standard');
             localStorage.setItem('nvh_vibrate', 'true');
         }
-        location.reload(); // Reload để áp dụng trạng thái mới
+        
+        // 4. Reload sau một khoảng nghỉ ngắn để DB kịp ghi
+        setTimeout(() => {
+            location.reload();
+        }, 200);
     } else {
         errorEl.style.display = 'block';
         document.getElementById('passcode-input').value = '';
