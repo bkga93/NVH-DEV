@@ -216,7 +216,7 @@
         </div>
 
         <footer class="footer">
-            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.8.5</span>
+            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.8.7</span>
         </footer>
     </div>
 
@@ -365,6 +365,20 @@
             <div class="changelog-container">
                 <div class="changelog-list">
                     <div class="changelog-item">
+                        <span class="ver-tag">v1.8.7</span>
+                        <ul>
+                            <li><b>Bảo mật (Cấp bách):</b> Sử dụng biến Session để "mở khóa" App ngay lập tức sau khi nhập đúng mật khẩu. Gỡ bỏ hoàn toàn lỗi vòng lưu vĩnh viễn trên iPhone.</li>
+                            <li><b>Tính năng:</b> Tự động ẩn cưỡng bức màn hình mật khẩu bằng class `auth-success`.</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
+                        <span class="ver-tag">v1.8.6</span>
+                        <ul>
+                            <li><b>Bảo mật (Sửa lỗi khẩn cấp):</b> Ép ẩn cưỡng bức màn hình mật khẩu bằng CSS khi xác thực thành công, xử lý lỗi kẹt giao diện trên Mobile Safari.</li>
+                            <li><b>Hệ thống:</b> Cập nhật Version nhận diện bản vá mới nhất.</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
                         <span class="ver-tag">v1.8.5</span>
                         <ul>
                             <li><b>Bảo mật:</b> Khắc phục triệt để lỗi "Vòng lặp xác thực" bằng cơ chế kiểm tra đồng bộ, loại bỏ hoàn toàn reload gây treo App.</li>
@@ -468,7 +482,7 @@
                 <input type="password" id="passcode-input" inputmode="numeric" maxlength="6" placeholder="******">
             </div>
             <button class="modal-btn btn-overwrite" onclick="validatePasscode()" style="margin-top: 20px;">XÁC NHẬN</button>
-            <div class="passcode-version">TCT Scanner Pro — Version 1.8.5</div>
+            <div class="passcode-version">TCT Scanner Pro — Version 1.8.7</div>
             <p id="passcode-error" style="color: var(--danger); font-size: 0.75rem; margin-top: 10px; display: none;">Mã Pin không chính xác!</p>
         </div>
     </div>

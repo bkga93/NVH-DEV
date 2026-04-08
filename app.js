@@ -45,6 +45,9 @@ let lastScanTime = 0;
 let isProcessing = false;
 const SCAN_DELAY = 1500;
 
+// --- BIẾN CỨU NGUY BẢO MẬT v1.8.7 (Anti-Loop Extreme) ---
+window.isVerifiedSession = false; 
+
 let remoteDataCache = [];
 let selectedRemoteItem = null;
 let currentPendingScan = null; 
@@ -622,34 +625,39 @@ function showToast(msg) {
 
 // --- LOGIC BẢO MẬT MÃ PIN ---
 function checkSecurity() {
-    console.log("Đang kiểm tra bảo mật (v1.8.5 - Sync-First)...");
-    const isVerifiedLocal = localStorage.getItem('nvh_verified') === 'true';
-    const modal = document.getElementById('passcode-modal');
-
-    // 1. Kiểm tra Local trước để mở app ngay lập tức v1.8.5
-    if (isVerifiedLocal) {
+    // 0. Ưu tiên tuyệt đối cờ Session để tránh Loop v1.8.7
+    if (window.isVerifiedSession === true) {
+        const modal = document.getElementById('passcode-modal');
         if (modal) modal.style.display = 'none';
-        console.log("Xác thực: Đã thông qua (Sync).");
-        // Âm thầm đồng bộ IndexedDB ở chế độ nền
-        getAuthToken().then(dbVal => {
-            if (dbVal !== 'true') setAuthToken('true');
-        });
+        document.body.classList.add('auth-success');
         return;
     }
 
-    // 2. Nếu Local chưa có, kiểm tra IndexedDB v1.8.5
+    console.log("Đang kiểm tra bảo mật (v1.8.7 - Session-Safe)...");
+    const isVerifiedLocal = localStorage.getItem('nvh_verified') === 'true';
+    const modal = document.getElementById('passcode-modal');
+
+    // 1. Kiểm tra Local trước (Sync)
+    if (isVerifiedLocal) {
+        if (modal) modal.style.display = 'none';
+        document.body.classList.add('auth-success');
+        window.isVerifiedSession = true; // Kích hoạt cờ session ngay
+        getAuthToken().then(dbVal => { if (dbVal !== 'true') setAuthToken('true'); });
+        return;
+    }
+
+    // 2. Kiểm tra IndexedDB (Async)
     getAuthToken().then(isVerifiedDB => {
-        if (isVerifiedDB === 'true') {
+        if (isVerifiedDB === 'true' || window.isVerifiedSession === true) {
             if (modal) modal.style.display = 'none';
+            document.body.classList.add('auth-success');
             localStorage.setItem('nvh_verified', 'true');
+            window.isVerifiedSession = true;
         } else {
             if (modal) {
                 modal.style.display = 'flex';
                 const input = document.getElementById('passcode-input');
-                if (input) {
-                    input.value = '';
-                    input.focus();
-                }
+                if (input) { input.value = ''; input.focus(); }
             }
         }
     });
@@ -657,7 +665,8 @@ function checkSecurity() {
 
 // Theo dõi trạng thái Tab để kiểm tra lại Passcode ngay lập tức (Xử lý iPhone Safari)
 document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
+    // Chỉ kiểm tra lại nếu chưa có cờ Session v1.8.7
+    if (document.visibilityState === 'visible' && !window.isVerifiedSession) {
         checkSecurity();
     }
 });
@@ -666,21 +675,26 @@ async function validatePasscode() {
     const input = document.getElementById('passcode-input').value;
     const errorEl = document.getElementById('passcode-error');
     if (input === '310824') {
-        // 1. Lưu CỰC NHANH vào localStorage v1.8.5
+        // 1. Kích hoạt cờ cứu nguy ngay lập tức v1.8.7
+        window.isVerifiedSession = true;
+        
+        // 2. Lưu cực nhanh vào localStorage v1.8.5
         localStorage.setItem('nvh_verified', 'true');
-        // 2. Đóng modal ngay lập tức để người dùng sử dụng v1.8.5
-        document.getElementById('passcode-modal').style.display = 'none';
+        
+        // 3. Ẩn modal cưỡng bức v1.8.6
+        document.body.classList.add('auth-success');
+        const modal = document.getElementById('passcode-modal');
+        if (modal) modal.style.display = 'none';
+        
         showToast("✔️ Xác thực thành công!");
         
-        // 3. Âm thầm lưu bền vững vào IndexedDB ở chế độ nền
+        // 4. Âm thầm lưu bền vững ở chế độ nền
         setAuthToken('true').catch(e => console.error("IDB Save Error:", e));
         
-        // Khởi tạo mặc định sau xác thực
         if (localStorage.getItem('nvh_sound_type') === null) {
             localStorage.setItem('nvh_sound_type', 'standard');
             localStorage.setItem('nvh_vibrate', 'true');
         }
-        // Tuyệt đối không gọi location.reload() để tránh vòng lặp treo v1.8.5
     } else {
         errorEl.style.display = 'block';
         document.getElementById('passcode-input').value = '';

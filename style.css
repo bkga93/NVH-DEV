@@ -1057,3 +1057,10 @@ input:checked + .slider:before { transform: translateX(20px); }
     opacity: 0.6;
     text-align: center;
 }
+
+/* Ép ẩn Modal xác thực khi đã thành công v1.8.6 */
+.auth-success #passcode-modal {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
