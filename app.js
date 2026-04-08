@@ -11,6 +11,7 @@ const SCAN_DELAY = 1500;
 
 let remoteDataCache = [];
 let selectedRemoteItem = null;
+let currentPendingScan = null; // Lưu trữ mã đang chờ xử lý trùng lặp
 
 // Khởi tạo Audio Context
 let audioCtx;
@@ -119,10 +120,23 @@ async function onScanSuccess(decodedText) {
         return;
     }
 
-    lastScanTime = now;
+    // Kiểm tra trùng lặp trên hệ thống
+    const isDuplicate = remoteDataCache.some(item => item.content === decodedText);
+    if (isDuplicate) {
+        currentPendingScan = decodedText;
+        showDuplicateModal(decodedText);
+        return;
+    }
+
+    processValidScan(decodedText);
+}
+
+function processValidScan(decodedText, action = 'APPEND') {
+    lastScanTime = Date.now();
     isProcessing = true;
+    
     document.getElementById('scanned-result').innerText = decodedText;
-    document.getElementById('sync-status').innerText = "Đã lưu máy - Đang chờ đồng bộ...";
+    document.getElementById('sync-status').innerText = (action === 'UPDATE' ? "Đang ghi đè..." : "Đang chờ đồng bộ...");
     document.getElementById('sync-status').style.color = "var(--primary-color)";
 
     const scanMode = document.querySelector('input[name="scanMode"]:checked').value;
@@ -131,7 +145,8 @@ async function onScanSuccess(decodedText) {
         orderId: "NVH-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
         content: decodedText,
         scanTime: new Date().toLocaleString('vi-VN'),
-        synced: false
+        synced: false,
+        action: action // NEW: Phân biệt Ghi thêm hay Ghi đè
     };
 
     saveToQueue(orderData);
@@ -139,6 +154,34 @@ async function onScanSuccess(decodedText) {
     processSyncQueue();
 
     if (scanMode === 'single') setTimeout(() => stopScanner(), 500);
+}
+
+// --- LOGIC XỬ LÝ TRÙNG LẶP ---
+function showDuplicateModal(code) {
+    document.getElementById('dup-code').innerText = code;
+    document.getElementById('duplicate-modal').style.display = 'flex';
+    // Tạm dừng camera nếu đang ở mode liên tục để người dùng chọn
+    const scanMode = document.querySelector('input[name="scanMode"]:checked').value;
+    if (scanMode === 'continuous') {
+        // Không dùng hẳn camera nhưng đánh dấu xử lý
+        isProcessing = true;
+    }
+}
+
+function handleDuplicateOption(option) {
+    document.getElementById('duplicate-modal').style.display = 'none';
+    isProcessing = false;
+    
+    if (option === 'overwrite') {
+        processValidScan(currentPendingScan, 'UPDATE');
+    } else if (option === 'append') {
+        processValidScan(currentPendingScan, 'APPEND');
+    } else if (option === 'skip') {
+        showToast("Đã bỏ qua mã trùng");
+        lastScanTime = Date.now();
+    }
+    
+    currentPendingScan = null;
 }
 
 // --- LOGIC HÀNG ĐỢI ĐỒNG BỘ ---
@@ -155,50 +198,60 @@ async function processSyncQueue() {
     let queue = JSON.parse(localStorage.getItem('nvh_scan_queue') || '[]');
     const unsyncedItems = queue.filter(item => !item.synced);
     if (unsyncedItems.length === 0) return;
+    
     isSyncing = true;
     const itemToSync = unsyncedItems[unsyncedItems.length - 1];
-    const success = await sendToGoogleSheets(itemToSync);
+    
+    // Chuẩn bị dữ liệu gửi đi
+    const payload = {
+        action: itemToSync.action || "APPEND",
+        orderId: itemToSync.orderId,
+        content: itemToSync.content,
+        scanTime: itemToSync.scanTime
+    };
+
+    const success = await sendToGoogleSheets(payload);
     if (success) {
         queue = queue.map(item => item.id === itemToSync.id ? { ...item, synced: true } : item);
         localStorage.setItem('nvh_scan_queue', JSON.stringify(queue));
+        
         if (document.getElementById('scanned-result').innerText === itemToSync.content) {
-            document.getElementById('sync-status').innerText = "Đã đồng bộ thành công!";
+            document.getElementById('sync-status').innerText = (payload.action === 'UPDATE' ? "Đã ghi đè thành công!" : "Đã đồng bộ thành công!");
             document.getElementById('sync-status').style.color = "var(--success)";
         }
+        
         loadLocalHistory();
         isSyncing = false;
-        setTimeout(processSyncQueue, 1000);
+        setTimeout(processSyncQueue, 500);
     } else {
         isSyncing = false;
         setTimeout(processSyncQueue, 5000);
     }
 }
 
-async function sendToGoogleSheets(data) {
+async function sendToGoogleSheets(payload) {
     try {
         await fetch(APP_SCRIPT_URL, {
             method: "POST",
-            body: JSON.stringify(data),
+            body: JSON.stringify(payload),
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
         return true;
     } catch (error) { return false; }
 }
 
-// --- LOGIC DỮ LIỆU TỪ SHEETS (LUÔN TÌM TRÊN HỆ THỐNG) ---
+// --- LOGIC DỮ LIỆU TỪ SHEETS ---
 
 let searchTimeout;
 function filterRemoteData(immediate = false) {
     const query = document.getElementById('remote-search-input').value.toLowerCase();
     
-    // Lọc nhanh từ cache (Suggetion)
     const filtered = remoteDataCache.filter(item => 
         (item.content && item.content.toLowerCase().includes(query)) || 
         (item.orderId && item.orderId.toLowerCase().includes(query))
     );
     displayRemoteData(filtered);
 
-    // Tìm kiếm hệ thống (Debounced)
     clearTimeout(searchTimeout);
     if (query.length >= 3 || immediate) {
         searchTimeout = setTimeout(() => searchRemoteSheets(query), immediate ? 0 : 800);
@@ -218,19 +271,17 @@ async function searchRemoteSheets(query) {
         });
         const data = await response.json();
         
-        // Cập nhật cache với kết quả mới (merge nếu cần, hoặc thay thế nếu là tìm kiếm đích danh)
         if (query.length > 5) {
-            remoteDataCache = data; // Thay thế nếu tìm kiếm sâu
+            remoteDataCache = data;
         } else {
-            // Merge nhẹ nhàng
             data.forEach(newItem => {
-                if (!remoteDataCache.find(old => old.orderId === newItem.orderId)) {
-                    remoteDataCache.unshift(newItem);
-                }
+                const idx = remoteDataCache.findIndex(old => old.orderId === newItem.orderId);
+                if (idx === -1) remoteDataCache.unshift(newItem);
+                else remoteDataCache[idx] = newItem; 
             });
         }
         
-        displayRemoteData(data); // Hiển thị kết quả từ server
+        displayRemoteData(data);
     } catch (error) {
         console.error("Search error:", error);
     } finally {
@@ -267,7 +318,6 @@ function displayRemoteData(dataToDisplay = null) {
     
     const query = document.getElementById('remote-search-input') ? document.getElementById('remote-search-input').value.trim() : "";
     
-    // Nếu không có từ khóa tìm kiếm và không phải là dữ liệu lọc truyền vào đích danh (dataToDisplay)
     if (!query && !dataToDisplay) {
         list.innerHTML = "<p class='empty-msg'>Vui lòng nhập mã để tìm kiếm.</p>";
         return;
@@ -292,22 +342,18 @@ function displayRemoteData(dataToDisplay = null) {
 
 function selectRemoteItem(item) {
     selectedRemoteItem = item;
-    
-    // UI Feedback
-    displayRemoteData(); // Để refresh class 'selected'
+    displayRemoteData();
 
-    // Điền thông tin vào panel chi tiết
     document.getElementById('detail-time').innerText = item.scanTime;
     document.getElementById('detail-id').innerText = item.orderId;
     document.getElementById('detail-content').innerText = item.content;
     
-    // Hiệu ứng nháy nhẹ cho phần thời gian khi đổi
     const timeEl = document.getElementById('detail-time');
     timeEl.style.animation = 'none';
-    timeEl.offsetHeight; /* trigger reflow */
+    timeEl.offsetHeight; 
     timeEl.style.animation = 'flashEffect 0.5s ease-out';
     
-    showToast("Đã chọn: " + item.orderId);
+    showToast("Đã chọn ID: " + item.orderId);
 }
 
 // --- LOGIC LỊCH SỬ TẠI MÁY ---
@@ -324,7 +370,7 @@ function loadLocalHistory(filteredData = null) {
                 ${item.synced ? 'Đã gửi' : 'Chờ gửi'}
             </span>
             <div class="history-item-header">
-                <strong>ID: ${item.orderId}</strong>
+                <strong>ID quét: ${item.orderId}</strong>
                 <span class="history-item-time">${item.scanTime}</span>
             </div>
             <div class="history-item-content">${item.content}</div>
