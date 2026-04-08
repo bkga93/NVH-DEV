@@ -133,7 +133,7 @@ body {
 .scanner-container {
     position: relative;
     width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 3/4; /* Thay đổi từ 1 sang 3/4 để khung cao hơn */
     background-color: black;
     border-radius: 24px;
     overflow: hidden;

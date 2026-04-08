@@ -75,7 +75,10 @@ async function toggleScanner() {
                 { facingMode: "environment" },
                 { 
                     fps: 25, 
-                    qrbox: (w, h) => { const size = Math.min(w, h) * 0.85; return { width: size, height: size }; },
+                    qrbox: (w, h) => { 
+                        // Mở rộng khung quét rộng ra và cao hơn (85% rộng, 70% cao)
+                        return { width: w * 0.85, height: h * 0.7 }; 
+                    },
                     aspectRatio: 1.0
                 },
                 onScanSuccess
