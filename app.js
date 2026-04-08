@@ -148,7 +148,7 @@ async function toggleScanner() {
                 { 
                     fps: 20, 
                     qrbox: (w, h) => {
-                        const size = Math.min(w, h) * 0.85; // Khung quét rộng 85%
+                        const size = Math.min(w, h) * 0.95; // Khung quét rộng 95%
                         return { width: size, height: size };
                     },
                     showViewFinder: false 
@@ -387,8 +387,11 @@ async function sendToGoogleSheets(payload) {
 
 let searchTimeout;
 function filterRemoteData(immediate = false) {
-    const query = document.getElementById('remote-search-input').value.toLowerCase();
+    const input = document.getElementById('remote-search-input');
+    if (!input) return;
+    const query = input.value.trim().toLowerCase();
     
+    // Luôn lọc local trước để phản hồi nhanh
     const filtered = remoteDataCache.filter(item => 
         (item.content && item.content.toLowerCase().includes(query)) || 
         (item.orderId && item.orderId.toLowerCase().includes(query))
@@ -397,14 +400,20 @@ function filterRemoteData(immediate = false) {
 
     clearTimeout(searchTimeout);
     if (query.length >= 3 || immediate) {
-        searchTimeout = setTimeout(() => searchRemoteSheets(query), immediate ? 0 : 800);
+        // Nếu query đủ dài hoặc yêu cầu tìm ngay, gọi lên Server
+        searchTimeout = setTimeout(() => searchRemoteSheets(query), immediate ? 0 : 600);
     }
 }
 
 async function searchRemoteSheets(query) {
+    if (!query) return;
     const list = document.getElementById('remote-data-list');
-    const refreshBtn = document.getElementById('refresh-icon');
-    if (refreshBtn) refreshBtn.parentElement.classList.add('refreshing');
+    const refreshBtn = document.getElementById('refresh-icon'); // Icon nếu có trong UI
+    
+    // Hiển thị trạng thái đang tìm (nếu danh sách trống)
+    if (list && list.innerHTML.includes('empty-msg')) {
+        list.innerHTML = "<p class='empty-msg'>🔍 Đang tìm kiếm trên máy chủ...</p>";
+    }
 
     try {
         const response = await fetch(APP_SCRIPT_URL, {
@@ -414,21 +423,27 @@ async function searchRemoteSheets(query) {
         });
         const data = await response.json();
         
-        if (query.length > 5) {
-            remoteDataCache = data;
-        } else {
+        // Cập nhật bộ nhớ đệm
+        if (data && data.length > 0) {
             data.forEach(newItem => {
-                const idx = remoteDataCache.findIndex(old => old.orderId === newItem.orderId);
+                const idx = remoteDataCache.findIndex(old => old.orderId === newItem.orderId || (old.content === newItem.content && old.content !== ''));
                 if (idx === -1) remoteDataCache.unshift(newItem);
                 else remoteDataCache[idx] = newItem; 
             });
+            // Lưu cache lại
+            localStorage.setItem('nvh_remote_cache', JSON.stringify(remoteDataCache.slice(0, 1000)));
         }
         
-        displayRemoteData(data);
+        // Hiển thị kết quả mới nhất cho query hiện tại
+        const currentQuery = document.getElementById('remote-search-input').value.trim().toLowerCase();
+        if (currentQuery === query.toLowerCase()) {
+            displayRemoteData(data);
+        }
     } catch (error) {
         console.error("Search error:", error);
-    } finally {
-        if (refreshBtn) refreshBtn.parentElement.classList.remove('refreshing');
+        if (list && list.innerHTML.includes('Đang tìm')) {
+            list.innerHTML = "<p class='empty-msg text-danger'>❌ Lỗi kết nối máy chủ.</p>";
+        }
     }
 }
 
@@ -568,10 +583,14 @@ function checkSecurity() {
     const isVerified = localStorage.getItem('nvh_verified') === 'true';
     const modal = document.getElementById('passcode-modal');
     if (isVerified) {
-        modal.style.display = 'none';
+        if (modal) modal.style.display = 'none';
+        console.log("Xác thực: Đã bỏ qua (Đã xác minh trước đó)");
     } else {
-        modal.style.display = 'flex';
-        document.getElementById('passcode-input').focus();
+        if (modal) {
+            modal.style.display = 'flex';
+            const input = document.getElementById('passcode-input');
+            if (input) input.focus();
+        }
     }
 }
 

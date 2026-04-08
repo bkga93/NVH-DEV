@@ -212,10 +212,10 @@ body {
     filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
 }
 
-.tl { top: 30px; left: 30px; border-right: none; border-bottom: none; border-radius: 12px 0 0 0; }
-.tr { top: 30px; right: 30px; border-left: none; border-bottom: none; border-radius: 0 12px 0 0; }
-.bl { bottom: 30px; left: 30px; border-right: none; border-top: none; border-radius: 0 0 0 12px; }
-.br { bottom: 30px; right: 30px; border-left: none; border-top: none; border-radius: 0 0 12px 0; }
+.tl { top: 2.5%; left: 2.5%; border-right: none; border-bottom: none; border-radius: 12px 0 0 0; }
+.tr { top: 2.5%; right: 2.5%; border-left: none; border-bottom: none; border-radius: 0 12px 0 0; }
+.bl { bottom: 2.5%; left: 2.5%; border-right: none; border-top: none; border-radius: 0 0 0 12px; }
+.br { bottom: 2.5%; right: 2.5%; border-left: none; border-top: none; border-radius: 0 0 12px 0; }
 
 /* Ẩn triệt để các thành phần tự vẽ của thư viện html5-qrcode */
 #reader__scan_region {
