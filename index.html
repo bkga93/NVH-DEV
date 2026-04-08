@@ -14,10 +14,13 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Flash Overlay (Success effect) -->
+        <div id="flash-overlay" class="flash-overlay"></div>
+
         <!-- Tabs Navigation -->
         <nav class="tabs-nav">
-            <button class="tab-btn active" onclick="switchTab('scan')">QUÉT MÃ</button>
-            <button class="tab-btn" onclick="switchTab('history')">LỊCH SỬ</button>
+            <button class="tab-btn active" id="btn-tab-scan" onclick="switchTab('scan')">QUÉT MÃ</button>
+            <button class="tab-btn" id="btn-tab-history" onclick="switchTab('history')">LỊCH SỬ</button>
         </nav>
 
         <!-- Main Content -->
@@ -37,7 +40,7 @@
                 <!-- Main Scanner UI -->
                 <div class="scanner-container" id="scanner-ui">
                     <div id="reader"></div>
-                    <div class="scan-overlay" id="scan-overlay"></div>
+                    <div class="scan-overlay" id="scan-overlay-frame"></div>
                 </div>
 
                 <div class="controls-container">
@@ -56,15 +59,24 @@
             </section>
 
             <!-- History View -->
-            <section id="history-view" class="view">
-                <div class="history-header">
-                    <h3>Lịch sử quét (Lưu tại máy)</h3>
-                    <button class="icon-btn" onclick="clearLocalHistory()">
-                        <span>Xóa hết</span>
-                    </button>
+            <section id="history-view" class="view" style="display: none;">
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Tìm kiếm đơn hàng..." onkeyup="filterHistory()">
+                        <button class="search-scan-btn" onclick="startSearchScan()">
+                            <!-- Scanner Icon Simple -->
+                            <span>📷</span>
+                        </button>
+                    </div>
                 </div>
+
+                <div class="history-header">
+                    <h3>Lịch sử (Lưu tại máy)</h3>
+                    <button class="clear-btn" onclick="clearLocalHistory()">Xóa hết</button>
+                </div>
+
                 <div id="history-list" class="history-list">
-                    <p class="empty-msg">Chưa có dữ liệu</p>
+                    <p class="empty-msg">Chưa có dữ liệu nào.</p>
                 </div>
             </section>
         </main>

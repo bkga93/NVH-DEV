@@ -30,12 +30,12 @@ body {
     height: 100%;
 }
 
-/* Tab Navigation */
+/* Tabs Navigation */
 .tabs-nav {
     background-color: var(--surface-color);
     display: flex;
-    padding-top: 40px; /* Safe area for iOS */
-    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    padding-top: 45px; /* Tai thỏ iPhone */
+    border-bottom: 2px solid rgba(255, 215, 0, 0.1);
 }
 
 .tab-btn {
@@ -45,43 +45,62 @@ body {
     color: var(--gray-text);
     padding: 15px;
     font-size: 0.9rem;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: 1px;
-    position: relative;
     cursor: pointer;
     transition: 0.3s;
 }
 
 .tab-btn.active {
     color: var(--primary-color);
+    background-color: rgba(255, 215, 0, 0.05);
 }
 
-/* Mode Selector */
+/* Tab Views */
+.tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.view {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.view.active {
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mode Switcher */
 .mode-selector-container {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     display: flex;
     justify-content: center;
 }
 
 .mode-switch {
-    background-color: rgba(255, 255, 255, 0.05);
-    padding: 4px;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 5px;
     border-radius: 12px;
     display: flex;
     border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
-.mode-switch input {
-    display: none;
-}
-
+.mode-switch input { display: none; }
 .mode-switch label {
-    padding: 8px 15px;
+    padding: 10px 20px;
     font-size: 0.8rem;
     cursor: pointer;
-    border-radius: 10px;
-    transition: 0.3s;
+    border-radius: 8px;
     color: var(--gray-text);
+    transition: 0.2s;
 }
 
 .mode-switch input:checked + label {
@@ -90,17 +109,16 @@ body {
     font-weight: bold;
 }
 
-/* Scanner Container */
+/* Scanner Container - Cải tiến to hơn */
 .scanner-container {
     position: relative;
     width: 100%;
-    max-width: 400px;
-    margin: 0 auto 20px;
     aspect-ratio: 1;
     background: #000;
-    border-radius: 20px;
+    border-radius: 15px;
     overflow: hidden;
-    border: 2px solid rgba(255, 215, 0, 0.3);
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 #reader {
@@ -108,65 +126,32 @@ body {
     height: 100%;
 }
 
+#reader video {
+    object-fit: cover !important; /* Quan trọng để tràn khung */
+}
+
 .scan-overlay {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 70%;
-    height: 70%;
-    border: 2px solid var(--primary-color);
-    border-radius: 20px;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border: 40px solid rgba(0, 0, 0, 0.5);
     pointer-events: none;
-    box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
-}
-
-.scan-overlay::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background-color: var(--primary-color);
-    box-shadow: 0 0 15px var(--primary-color);
-    animation: scanLine 2s infinite ease-in-out;
-}
-
-@keyframes scanLine {
-    0% { top: 0; }
-    50% { top: 100%; }
-    100% { top: 0; }
 }
 
 /* Controls */
 .controls-container {
-    margin-bottom: 20px;
+    margin: 15px 0;
 }
 
 .main-scan-btn {
     width: 100%;
-    padding: 18px;
-    border-radius: 18px;
+    padding: 20px;
+    border-radius: 15px;
     background-color: var(--primary-color);
     color: var(--surface-color);
     border: none;
+    font-weight: 900;
     cursor: pointer;
-    transition: 0.3s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.main-scan-btn #btn-text {
-    font-size: 1.2rem;
-    font-weight: 800;
-}
-
-.main-scan-btn .btn-subtext {
-    font-size: 0.7rem;
-    margin-top: 4px;
-    opacity: 0.8;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .main-scan-btn.scanning {
@@ -174,99 +159,108 @@ body {
     color: white;
 }
 
-.glow {
-    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
-}
-
-.glow:active {
-    transform: scale(0.98);
-}
-
-/* Info Display */
+/* Last Scan Info */
 .last-scan-status {
     background-color: var(--surface-color);
-    border-radius: 18px;
+    border-radius: 15px;
     padding: 15px;
     border: 1px solid rgba(255, 215, 0, 0.1);
 }
 
-.status-header {
-    font-size: 0.7rem;
-    color: var(--gray-text);
-    margin-bottom: 5px;
-}
-
 .status-content {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 5px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    word-break: break-all;
 }
 
-.status-footer {
-    font-size: 0.7rem;
-    color: var(--success);
+/* Search Bar in History */
+.search-container {
+    margin-bottom: 15px;
 }
 
-/* History */
+.search-box {
+    display: flex;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 5px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.search-box input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: white;
+    padding: 10px;
+    font-size: 1rem;
+    outline: none;
+}
+
+.search-scan-btn {
+    background: var(--primary-color);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 10px;
+}
+
+/* History List */
 .history-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
-.icon-btn {
+.clear-btn {
     background: none;
     border: 1px solid var(--danger);
     color: var(--danger);
-    padding: 5px 10px;
-    border-radius: 8px;
+    padding: 5px 12px;
+    border-radius: 6px;
     font-size: 0.7rem;
 }
 
 .history-item {
     background-color: rgba(255, 255, 255, 0.05);
-    padding: 12px;
+    padding: 15px;
     border-radius: 12px;
     margin-bottom: 10px;
-    border-left: 3px solid var(--primary-color);
+    border-left: 4px solid var(--primary-color);
 }
 
-.history-item-time {
-    font-size: 0.7rem;
-    color: var(--gray-text);
+/* Flash Effect */
+.flash-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--success);
+    opacity: 0;
+    z-index: 9999;
+    pointer-events: none;
 }
 
-/* Footer Control */
-.footer {
-    padding: 15px;
-    text-align: right;
+.flash-active {
+    animation: flashEffect 0.5s ease-out;
 }
 
-.copyright {
-    font-size: 0.7rem;
-    color: var(--gray-text);
-}
-
-.copyright i {
-    color: var(--primary-color);
-    font-weight: bold;
+@keyframes flashEffect {
+    0% { opacity: 0.5; }
+    100% { opacity: 0; }
 }
 
 /* Toast */
 .toast {
     position: fixed;
-    bottom: 30px;
+    bottom: 50px;
     left: 50%;
     transform: translateX(-50%) translateY(100px);
-    background-color: rgba(255, 255, 255, 0.9);
-    color: #000;
-    padding: 12px 25px;
-    border-radius: 30px;
+    background-color: white;
+    color: black;
+    padding: 10px 25px;
+    border-radius: 20px;
     font-weight: bold;
-    z-index: 1000;
-    transition: 0.5s;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    z-index: 10000;
+    transition: 0.4s;
 }
 
 .toast.show {
