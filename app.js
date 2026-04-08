@@ -574,32 +574,6 @@ function toggleDrawer(show) {
     }
 }
 
-async function updateCameraList() {
-    const select = document.getElementById('camera-select');
-    try {
-        const devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length > 0) {
-            select.innerHTML = devices.map(d => 
-                `<option value="${d.id}" ${localStorage.getItem('nvh_camera_id') === d.id ? 'selected' : ''}>${d.label || 'Camera ' + d.id.substr(0,4)}</option>`
-            ).join('');
-        } else {
-            select.innerHTML = `<option value="">Không tìm thấy camera</option>`;
-        }
-    } catch (err) {
-        select.innerHTML = `<option value="">Lỗi: Quyền truy cập</option>`;
-    }
-}
-
-function saveDeviceSettings() {
-    localStorage.setItem('nvh_sound_type', document.getElementById('sound-select').value);
-    localStorage.setItem('nvh_vibrate', document.getElementById('vibrate-toggle').checked);
-    localStorage.setItem('nvh_camera_id', document.getElementById('camera-select').value);
-    // Nếu đang quét mà đổi camera, khởi động lại để áp dụng
-    if (isScanning) {
-        stopScanner().then(() => toggleScanner());
-    }
-}
-
 function previewSound() {
     const key = document.getElementById('sound-select').value;
     playBeep(key);
