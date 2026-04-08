@@ -120,9 +120,15 @@ async function onScanSuccess(decodedText) {
         return;
     }
 
-    // Kiểm tra trùng lặp trên hệ thống
-    const isDuplicate = remoteDataCache.some(item => item.content === decodedText);
-    if (isDuplicate) {
+    // Kiểm tra trùng lặp
+    // 1. Kiểm tra trên hệ thống (Sheets)
+    const isDuplicateRemote = remoteDataCache.some(item => item.content === decodedText);
+    
+    // 2. Kiểm tra trong lịch sử quét tại máy (đề phòng vừa quét xong chưa kịp lên Sheets)
+    const localQueue = JSON.parse(localStorage.getItem('nvh_scan_queue') || '[]');
+    const isDuplicateLocal = localQueue.some(item => item.content === decodedText);
+
+    if (isDuplicateRemote || isDuplicateLocal) {
         currentPendingScan = decodedText;
         showDuplicateModal(decodedText);
         return;
