@@ -216,7 +216,7 @@
         </div>
 
         <footer class="footer">
-            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.8.4</span>
+            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.8.5</span>
         </footer>
     </div>
 
@@ -365,6 +365,14 @@
             <div class="changelog-container">
                 <div class="changelog-list">
                     <div class="changelog-item">
+                        <span class="ver-tag">v1.8.5</span>
+                        <ul>
+                            <li><b>Bảo mật:</b> Khắc phục triệt để lỗi "Vòng lặp xác thực" bằng cơ chế kiểm tra đồng bộ, loại bỏ hoàn toàn reload gây treo App.</li>
+                            <li><b>Máy quét:</b> Ép camera hiển thị khít 100% diện tích khung vàng, xoá bỏ hoàn toàn dải mờ trên/dưới.</li>
+                            <li><b>Hệ thống:</b> Hiển thị Version trực tiếp trên màn hình nhập mật khẩu để dễ nhận diện.</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
                         <span class="ver-tag">v1.8.4</span>
                         <ul>
                             <li><b>Bảo mật:</b> Khắc phục triệt để lỗi "Vòng lặp xác thực" gây ra bởi cơ chế bất đồng bộ của IndexedDB.</li>
@@ -460,7 +468,7 @@
                 <input type="password" id="passcode-input" inputmode="numeric" maxlength="6" placeholder="******">
             </div>
             <button class="modal-btn btn-overwrite" onclick="validatePasscode()" style="margin-top: 20px;">XÁC NHẬN</button>
-            <div class="passcode-version">TCT Scanner Pro — Version 1.8.4</div>
+            <div class="passcode-version">TCT Scanner Pro — Version 1.8.5</div>
             <p id="passcode-error" style="color: var(--danger); font-size: 0.75rem; margin-top: 10px; display: none;">Mã Pin không chính xác!</p>
         </div>
     </div>

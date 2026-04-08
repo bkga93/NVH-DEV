@@ -212,22 +212,23 @@ body {
     filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.4));
 }
 
-/* Ép Scanner quét toàn diện tích khung vàng v1.8.3 */
+/* Ép Scanner quét toàn diện tích khung vàng v1.8.5 */
 #reader {
     width: 100% !important;
     height: 100% !important;
     border: none !important;
-    background: transparent !important;
+    background: black !important;
+    overflow: hidden !important;
 }
 
 #reader__scan_region {
-    display: none !important; /* Ẩn vùng quét mờ mặc định của thư viện */
+    display: none !important; /* Xóa bỏ vùng quét mờ hình vuông/chữ nhật mặc định v1.8.5 */
 }
 
 #reader video {
     width: 100% !important;
     height: 100% !important;
-    object-fit: cover !important; /* Ép video tràn đầy khung ranh giới */
+    object-fit: cover !important; /* Ép video tràn đầy khít 100% khung vàng v1.8.5 */
     border-radius: 20px;
 }
 

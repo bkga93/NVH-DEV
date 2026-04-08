@@ -621,28 +621,38 @@ function showToast(msg) {
 }
 
 // --- LOGIC BẢO MẬT MÃ PIN ---
-async function checkSecurity() {
-    console.log("Đang kiểm tra bảo mật (v1.8.4 - Anti-Loop)...");
+function checkSecurity() {
+    console.log("Đang kiểm tra bảo mật (v1.8.5 - Sync-First)...");
     const isVerifiedLocal = localStorage.getItem('nvh_verified') === 'true';
-    const isVerifiedDB = await getAuthToken() === 'true';
-    const isVerified = isVerifiedLocal || isVerifiedDB;
-
     const modal = document.getElementById('passcode-modal');
-    if (isVerified) {
+
+    // 1. Kiểm tra Local trước để mở app ngay lập tức v1.8.5
+    if (isVerifiedLocal) {
         if (modal) modal.style.display = 'none';
-        // Luôn đảm bảo đồng bộ lại nếu một trong hai bị mất (Tự động sửa lỗi session)
-        if (!isVerifiedDB) await setAuthToken('true');
-        if (!isVerifiedLocal) localStorage.setItem('nvh_verified', 'true');
-    } else {
-        if (modal) {
-            modal.style.display = 'flex';
-            const input = document.getElementById('passcode-input');
-            if (input) {
-                input.value = '';
-                input.focus();
+        console.log("Xác thực: Đã thông qua (Sync).");
+        // Âm thầm đồng bộ IndexedDB ở chế độ nền
+        getAuthToken().then(dbVal => {
+            if (dbVal !== 'true') setAuthToken('true');
+        });
+        return;
+    }
+
+    // 2. Nếu Local chưa có, kiểm tra IndexedDB v1.8.5
+    getAuthToken().then(isVerifiedDB => {
+        if (isVerifiedDB === 'true') {
+            if (modal) modal.style.display = 'none';
+            localStorage.setItem('nvh_verified', 'true');
+        } else {
+            if (modal) {
+                modal.style.display = 'flex';
+                const input = document.getElementById('passcode-input');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
             }
         }
-    }
+    });
 }
 
 // Theo dõi trạng thái Tab để kiểm tra lại Passcode ngay lập tức (Xử lý iPhone Safari)
@@ -656,30 +666,21 @@ async function validatePasscode() {
     const input = document.getElementById('passcode-input').value;
     const errorEl = document.getElementById('passcode-error');
     if (input === '310824') {
-        // 1. Lưu CỰC NHANH vào localStorage để UI qua cửa ngay lập tức v1.8.4
+        // 1. Lưu CỰC NHANH vào localStorage v1.8.5
         localStorage.setItem('nvh_verified', 'true');
-        
-        // 2. Lưu BỀN VỮNG vào IndexedDB
-        try {
-            await setAuthToken('true');
-        } catch (e) {
-            console.error("IndexedDB error:", e);
-        }
-        
-        // 3. Đóng modal tạm thời gỡ lỗi vòng lặp
+        // 2. Đóng modal ngay lập tức để người dùng sử dụng v1.8.5
         document.getElementById('passcode-modal').style.display = 'none';
-        showToast("Xác thực thành công!");
+        showToast("✔️ Xác thực thành công!");
+        
+        // 3. Âm thầm lưu bền vững vào IndexedDB ở chế độ nền
+        setAuthToken('true').catch(e => console.error("IDB Save Error:", e));
         
         // Khởi tạo mặc định sau xác thực
         if (localStorage.getItem('nvh_sound_type') === null) {
             localStorage.setItem('nvh_sound_type', 'standard');
             localStorage.setItem('nvh_vibrate', 'true');
         }
-        
-        // 4. Reload sau một khoảng nghỉ ngắn để DB kịp ghi
-        setTimeout(() => {
-            location.reload();
-        }, 200);
+        // Tuyệt đối không gọi location.reload() để tránh vòng lặp treo v1.8.5
     } else {
         errorEl.style.display = 'block';
         document.getElementById('passcode-input').value = '';
