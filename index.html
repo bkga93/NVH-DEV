@@ -75,9 +75,20 @@
                                     <div id="pc-pro-last-scanned" class="status-value" style="font-size: 1.8rem;">Đang chờ...</div>
                                     <div id="pc-pro-status-msg" class="status-hint">Sẵn sàng</div>
                                 </div>
-                                <button class="pc-action-btn" onclick="toggleScanner()" style="margin-top: auto;">
+                                <button class="pc-action-btn" onclick="toggleScanner()">
                                     <span class="btn-main-text">BẮT ĐẦU QUÉT</span>
                                 </button>
+
+                                <!-- Ô SỐ 1: BẢNG LỊCH SỬ QUÉT NHANH v2.1.0 -->
+                                <div class="pc-recent-container">
+                                    <div class="pc-recent-header">
+                                        <span>📋 LỊCH SỬ QUÉT NHANH</span>
+                                        <span id="pc-recent-count" class="badge">0</span>
+                                    </div>
+                                    <div id="pc-recent-list" class="pc-recent-list">
+                                        <div class="recent-empty">Chưa có mã đơn nào...</div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Cột Phải: Giám sát & Ghi hình -->

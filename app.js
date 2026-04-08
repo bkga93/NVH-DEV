@@ -328,12 +328,13 @@ function processValidScan(decodedText, action = 'APPEND') {
     lastScannedId = orderData.orderId;
     updatePCDisplay(orderData.orderId);
 
-    // v1.9.5: Tự động khởi động Ghi hình khi quét mã (Nếu ở chế độ PC và bật Auto)
-    const isAutoRec = document.getElementById('auto-rec-checkbox')?.checked;
     if (pcMode && isAutoRec) {
         if (recordingActive) stopDualRecording();
         setTimeout(() => startDualRecording(orderData.orderId), 300);
     }
+
+    // Tích hợp Bảng Lịch sử Nhanh v2.1.0
+    if (pcMode) updatePCRecentList(decodedText, 'success');
 
     if (scanMode === 'single' && !pcMode) setTimeout(() => stopScanner(), 500);
 }
@@ -1542,7 +1543,58 @@ function stopManualRec() {
     document.querySelector('.pc-right-col').classList.remove('rec-active-mode');
 }
 
-// --- LOGIC RESIZER KÉO THẢ v2.0.0 ---
+// --- LOGIC BẢO MẬT & KÍCH HOẠT v2.0.x --- (Giữ nguyên)
+
+// --- LOGIC BẢNG LỊCH SỬ QUÉT NHANH v2.1.0 ---
+let pcRecentScans = [];
+
+function updatePCRecentList(code, status = 'success') {
+    const listEl = document.getElementById('pc-recent-list');
+    const countEl = document.getElementById('pc-recent-count');
+    if (!listEl) return;
+
+    const now = new Date();
+    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+    // Thêm vào đầu danh sách
+    pcRecentScans.unshift({ code, time: timeStr, status });
+
+    // Giữ lại tối đa 20 mã
+    if (pcRecentScans.length > 20) pcRecentScans.pop();
+
+    renderPCRecentList();
+}
+
+function renderPCRecentList() {
+    const listEl = document.getElementById('pc-recent-list');
+    const countEl = document.getElementById('pc-recent-count');
+    if (!listEl) return;
+
+    if (pcRecentScans.length === 0) {
+        listEl.innerHTML = '<div class="recent-empty">Chưa có mã đơn nào...</div>';
+        if (countEl) countEl.innerText = '0';
+        return;
+    }
+
+    if (countEl) countEl.innerText = pcRecentScans.length;
+
+    listEl.innerHTML = pcRecentScans.map(item => `
+        <div class="recent-scan-item">
+            <div class="recent-scan-info">
+                <span class="recent-code">${item.code}</span>
+                <span class="recent-time">🕒 ${item.time}</span>
+            </div>
+            <span class="recent-status" style="${item.status !== 'success' ? 'color: #ff4477; background: rgba(255, 68, 119, 0.1);' : ''}">
+                ${item.status === 'success' ? 'Đã thêm' : 'Lỗi'}
+            </span>
+        </div>
+    `).join('');
+}
+
+function clearPCRecentList() {
+    pcRecentScans = [];
+    renderPCRecentList();
+}
 function initPCResizer() {
     const resizer = document.getElementById('pc-resizer-bar');
     const leftSide = document.getElementById('monitor-1');
