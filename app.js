@@ -75,12 +75,12 @@ async function toggleScanner() {
                 { facingMode: "environment" },
                 { 
                     fps: 25, 
-                    qrbox: (w, h) => { 
-                        // Hoàn trả về hình vuông cực đại (85% cạnh nhỏ nhất)
-                        const size = Math.min(w, h) * 0.85; 
-                        return { width: size, height: size }; 
+                    qrbox: (w, h) => {
+                        // Tính toán hình vuông 1:1 dựa trên cạnh ngắn nhất
+                        const size = Math.min(w, h) * 0.9;
+                        return { width: size, height: size };
                     },
-                    aspectRatio: 1.0
+                    // Không ép tỷ lệ camera để tránh bị méo hình trên 1 số thiết bị
                 },
                 onScanSuccess
             );
