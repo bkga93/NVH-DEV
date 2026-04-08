@@ -447,8 +447,8 @@ function displayRemoteData(dataToDisplay = null) {
         <div class="history-item ${selectedRemoteItem && selectedRemoteItem.orderId === item.orderId ? 'selected' : ''}" 
              onclick='selectRemoteItem(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
             <div class="history-item-header">
-                <strong>ID: ${item.orderId || 'N/A'}</strong>
-                <span class="history-item-time">${item.scanTime}</span>
+                <strong>ID: ${item.orderId}</strong>
+                <span class="history-item-time highlight-time">${item.scanTime}</span>
             </div>
             <div class="history-item-content">${item.content}</div>
         </div>
@@ -917,7 +917,138 @@ function selectReviewItem(item) {
     document.getElementById('review-detail-id').innerText = item.orderId;
     document.getElementById('review-detail-time').innerText = item.scanTime;
     
+    // Kiểm tra trạng thái video v1.6.8
+    checkVideoStatus(item.orderId);
+    
     showToast("Đã chọn đơn: " + item.orderId);
+}
+
+/* --- VIDEO STATUS & DOWNLOAD LOGIC v1.6.8 --- */
+
+function copyOrderId() {
+    const id = document.getElementById('detail-id').innerText;
+    if (!id || id === '...') return;
+    navigator.clipboard.writeText(id).then(() => {
+        showToast("📋 Đã copy mã đơn: " + id);
+    });
+}
+
+async function checkVideoStatus(orderId) {
+    const statusCloud = document.getElementById('status-cloud');
+    const statusLocal = document.getElementById('status-local');
+    const btnSync = document.getElementById('btn-sync-play');
+    const downloadContainer = document.getElementById('download-container');
+
+    statusCloud.className = 'status-badge';
+    statusCloud.innerText = '☁️ Kiểm tra Cloud...';
+    statusLocal.className = 'status-badge';
+    statusLocal.innerText = '📂 Kiểm tra Máy...';
+
+    // 1. Kiểm tra Local
+    let isLocal = false;
+    if (hddFolderHandle) {
+        try {
+            await hddFolderHandle.getFileHandle(`${orderId}_CAM1.webm`);
+            isLocal = true;
+        } catch (e) { isLocal = false; }
+    }
+
+    if (isLocal) {
+        statusLocal.className = 'status-badge available';
+        statusLocal.innerText = '📂 Đã có trên Máy';
+        btnSync.disabled = false;
+        btnSync.classList.remove('disabled');
+        downloadContainer.style.display = 'none';
+    } else {
+        statusLocal.className = 'status-badge missing';
+        statusLocal.innerText = '📂 Chưa có trên Máy';
+        btnSync.disabled = true;
+        btnSync.classList.add('disabled');
+        downloadContainer.style.display = 'block';
+    }
+
+    // 2. Kiểm tra Cloud
+    try {
+        const response = await fetch(APP_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "CHECK_FILE", fileName: `${orderId}_CAM1.webm` })
+        });
+        const result = await response.json();
+        
+        if (result && result.exists) {
+            statusCloud.className = 'status-badge available';
+            statusCloud.innerText = '☁️ Đã có trên Cloud';
+            if (!isLocal) downloadContainer.style.display = 'block';
+        } else {
+            statusCloud.className = 'status-badge missing';
+            statusCloud.innerText = '☁️ Không có trên Cloud';
+            if (!isLocal) downloadContainer.style.display = 'none';
+        }
+    } catch (err) {
+        statusCloud.innerText = '☁️ Phải cài App Script mới kiểm tra được Cloud';
+    }
+}
+
+async function downloadVideoFromCloud() {
+    if (!selectedReviewItem) return;
+    const orderId = selectedReviewItem.orderId;
+    const btnText = document.getElementById('download-text');
+    const progressFill = document.getElementById('download-progress');
+    const btnDownload = document.getElementById('btn-download');
+
+    if (!hddFolderHandle) {
+        showToast("⚠️ Vui lòng CẤP QUYỀN LƯU Ổ CỨNG trước!");
+        return;
+    }
+
+    btnDownload.disabled = true;
+    btnDownload.style.opacity = "0.7";
+    btnText.innerText = "ĐANG TẢI...";
+    progressFill.style.width = "0%";
+
+    try {
+        const cams = ['CAM1', 'CAM2'];
+        for (let i = 0; i < cams.length; i++) {
+            const cam = cams[i];
+            const fileName = `${orderId}_${cam}.webm`;
+            
+            const response = await fetch(APP_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "DOWNLOAD_VIDEO", fileName: fileName })
+            });
+
+            if (!response.ok) continue;
+            
+            const result = await response.json();
+            if (!result.base64) continue;
+            
+            // Chuyển base64 sang blob
+            const byteCharacters = atob(result.base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let j = 0; j < byteCharacters.length; j++) {
+                byteNumbers[j] = byteCharacters.charCodeAt(j);
+            }
+            const blob = new Blob([new Uint8Array(byteNumbers)], { type: 'video/webm' });
+
+            // Lưu vào HDD
+            const fileHandle = await hddFolderHandle.getFileHandle(fileName, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            
+            // Cập nhật progress
+            progressFill.style.width = ((i + 1) / cams.length * 100) + "%";
+        }
+
+        showToast("✔️ Tải video thành công!");
+        checkVideoStatus(orderId);
+    } catch (err) {
+        console.error(err);
+        showToast("❌ Lỗi khi tải video!");
+        btnDownload.disabled = false;
+        btnDownload.style.opacity = "1";
+        btnText.innerText = "TẢI LẠI";
+    }
 }
 
 function lookupAndPlayVideo() {

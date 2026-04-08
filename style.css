@@ -680,6 +680,101 @@ body {
     margin-bottom: 0;
 }
 
+.small-list .history-item-header {
+    margin-bottom: 0;
+}
+
+/* --- UI ENHANCEMENTS v1.6.8 --- */
+.highlight-time {
+    color: var(--warning);
+    font-size: 1rem;
+    font-weight: 900;
+    text-shadow: 0 0 10px rgba(255, 187, 51, 0.3);
+}
+
+.id-copy-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.copy-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.copy-btn:active {
+    background: var(--primary-color);
+    transform: scale(0.9);
+}
+
+.status-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+}
+
+.status-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-badge.available {
+    color: var(--success);
+    border-color: var(--success);
+    background: rgba(0, 255, 136, 0.12);
+}
+
+.status-badge.missing {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: rgba(255, 68, 119, 0.12);
+}
+
+/* Download Progress Button */
+.download-container {
+    flex: 1;
+}
+
+.download-btn {
+    position: relative;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 215, 0, 0.3) !important;
+    color: white !important;
+}
+
+.progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: var(--primary-color);
+    transition: width 0.1s linear;
+    opacity: 0.4;
+}
+
+.sync-play-btn.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+    filter: grayscale(1);
+}
+
+.download-btn span {
+    position: relative;
+    z-index: 1;
+}
+
 .drawer-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;

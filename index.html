@@ -102,8 +102,14 @@
                     <div id="remote-data-list" class="history-list"></div>
                     <div id="item-detail-panel" class="detail-panel" style="display: none;">
                         <h4 class="detail-title">THÔNG TIN CHI TIẾT</h4>
-                        <div class="detail-row"><span>ID đơn hàng:</span> <strong id="detail-id">...</strong></div>
-                        <div class="detail-row"><span>Ngày quét:</span> <span id="detail-time">...</span></div>
+                        <div class="detail-row">
+                            <span>ID đơn hàng:</span> 
+                            <div class="id-copy-group">
+                                <strong id="detail-id">...</strong>
+                                <button class="copy-btn" onclick="copyOrderId()">📋</button>
+                            </div>
+                        </div>
+                        <div class="detail-row highlight-row"><span>Ngày quét:</span> <span id="detail-time" class="highlight-time">...</span></div>
                         <div class="detail-row"><span>Nội dung mã:</span> <div id="detail-content" class="detail-content-box">...</div></div>
                     </div>
                 </section>
@@ -123,7 +129,14 @@
                     
                     <div id="review-detail-panel" class="detail-panel" style="display: none; margin-bottom: 20px;">
                         <div class="detail-row"><span>Đang xem:</span> <strong id="review-detail-id" style="color: var(--primary-color);">...</strong></div>
-                        <div class="detail-row"><span>Thời gian:</span> <span id="review-detail-time">...</span></div>
+                        <div class="detail-row highlight-row"><span>Thời gian:</span> <span id="review-detail-time" class="highlight-time">...</span></div>
+                        <div class="detail-row">
+                            <span>Trạng thái:</span>
+                            <div class="status-group">
+                                <span id="status-cloud" class="status-badge">☁️ Kiểm tra Cloud...</span>
+                                <span id="status-local" class="status-badge">📂 Kiểm tra Máy...</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="review-bottom-panel">
@@ -142,8 +155,13 @@
                         </div>
                         
                         <div class="review-controls">
-                            <button class="sync-play-btn glow" onclick="syncPlayPause()">PHÁT ĐỒNG BỘ</button>
-                            <button class="sync-play-btn secondary" onclick="promptLocalFiles()">CHỌN FILE</button>
+                            <button id="btn-sync-play" class="sync-play-btn glow disabled" onclick="syncPlayPause()" disabled>PHÁT ĐỒNG BỘ</button>
+                            <div id="download-container" class="download-container" style="display: none;">
+                                <button id="btn-download" class="sync-play-btn download-btn" onclick="downloadVideoFromCloud()">
+                                    <div id="download-progress" class="progress-fill"></div>
+                                    <span id="download-text">TẢI VIDEO</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -187,7 +205,7 @@
         </div>
 
         <footer class="footer">
-            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.6.7</span>
+            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.6.8</span>
         </footer>
     </div>
 
@@ -255,6 +273,15 @@
             <div class="changelog-container">
                 <label>NHẬT KÝ THAY ĐỔI</label>
                 <div class="changelog-list">
+                    <div class="changelog-item">
+                        <span class="ver-tag">v1.6.8</span>
+                        <ul>
+                            <li>Quản lý video thông minh: Tự động kiểm tra Cloud/Máy.</li>
+                            <li>Tích hợp nút Tải về (Download) kèm thanh tiến trình trực quan.</li>
+                            <li>Nâng cấp tìm kiếm tab Xem lại: Tìm theo mã vận chuyển.</li>
+                            <li>Bổ sung nút Copy mã đơn hàng và làm nổi bật thời gian quét.</li>
+                        </ul>
+                    </div>
                     <div class="changelog-item">
                         <span class="ver-tag">v1.6.7</span>
                         <ul>
