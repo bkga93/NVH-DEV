@@ -146,6 +146,20 @@
         </div>
     </div>
 
+    <!-- Security Passcode Modal -->
+    <div id="passcode-modal" class="modal-overlay" style="display: flex;">
+        <div class="modal-content passcode-screen">
+            <div class="modal-icon">🔒</div>
+            <h3>Yêu cầu xác thực</h3>
+            <p>Vui lòng nhập mã truy cập để sử dụng hệ thống.</p>
+            <div class="passcode-input-group">
+                <input type="password" id="passcode-input" inputmode="numeric" maxlength="6" placeholder="******">
+            </div>
+            <button class="modal-btn btn-overwrite" onclick="validatePasscode()" style="margin-top: 20px;">XÁC NHẬN</button>
+            <p id="passcode-error" style="color: var(--danger); font-size: 0.75rem; margin-top: 10px; display: none;">Mã Pin không chính xác!</p>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 

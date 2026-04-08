@@ -76,8 +76,9 @@ async function toggleScanner() {
                 { 
                     fps: 25, 
                     qrbox: (w, h) => { 
-                        // Mở rộng khung quét rộng ra và cao hơn (85% rộng, 70% cao)
-                        return { width: w * 0.85, height: h * 0.7 }; 
+                        // Hoàn trả về hình vuông cực đại (85% cạnh nhỏ nhất)
+                        const size = Math.min(w, h) * 0.85; 
+                        return { width: size, height: size }; 
                     },
                     aspectRatio: 1.0
                 },
@@ -422,7 +423,34 @@ function showToast(msg) {
     }, 2500);
 }
 
+// --- LOGIC BẢO MẬT MÃ PIN ---
+function checkSecurity() {
+    const isVerified = localStorage.getItem('nvh_verified') === 'true';
+    const modal = document.getElementById('passcode-modal');
+    if (isVerified) {
+        modal.style.display = 'none';
+    } else {
+        modal.style.display = 'flex';
+        document.getElementById('passcode-input').focus();
+    }
+}
+
+function validatePasscode() {
+    const input = document.getElementById('passcode-input').value;
+    const errorEl = document.getElementById('passcode-error');
+    if (input === '310824') {
+        localStorage.setItem('nvh_verified', 'true');
+        document.getElementById('passcode-modal').style.display = 'none';
+        showToast("Xác thực thành công!");
+    } else {
+        errorEl.style.display = 'block';
+        document.getElementById('passcode-input').value = '';
+        setTimeout(() => { errorEl.style.display = 'none'; }, 2000);
+    }
+}
+
 window.onload = () => {
+    checkSecurity(); // Kiểm tra bảo mật ngay khi tải trang
     loadLocalHistory();
     const cache = localStorage.getItem('nvh_remote_cache');
     if (cache) { remoteDataCache = JSON.parse(cache); displayRemoteData(); }

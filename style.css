@@ -133,12 +133,32 @@ body {
 .scanner-container {
     position: relative;
     width: 100%;
-    aspect-ratio: 3/4; /* Thay đổi từ 1 sang 3/4 để khung cao hơn */
+    aspect-ratio: 1; /* Hoàn trả về hình vuông 1:1 */
     background-color: black;
     border-radius: 24px;
     overflow: hidden;
     border: 2px solid var(--primary-color);
     box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
+}
+
+/* Passcode Input Styling */
+.passcode-input-group {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 5px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    margin: 0 20px;
+}
+
+#passcode-input {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 2rem;
+    text-align: center;
+    letter-spacing: 10px;
+    outline: none;
 }
 
 #reader {
