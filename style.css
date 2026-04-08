@@ -299,13 +299,74 @@ body {
     to { transform: rotate(360deg); }
 }
 
+/* Remote Data Styles & Detail Panel */
+#data-view {
+    padding-bottom: 220px; /* Chừa chỗ cho detail panel */
+}
+
+.detail-panel {
+    position: fixed;
+    bottom: 60px; /* Trên footer một chút */
+    left: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, var(--surface-color), #3d0e3d);
+    border: 1px solid var(--primary-color);
+    border-radius: 20px;
+    padding: 15px;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    animation: slideUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.detail-header {
+    font-size: 0.8rem;
+    font-weight: 900;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    padding-bottom: 5px;
+    letter-spacing: 2px;
+}
+
+.detail-row {
+    margin-bottom: 8px;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: var(--gray-text);
+    display: block;
+}
+
+.detail-value {
+    font-size: 1rem;
+    font-weight: bold;
+    color: white;
+    word-break: break-all;
+}
+
+.time-critical {
+    font-size: 2.2rem; /* Cực to */
+    color: var(--primary-color);
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    line-height: 1.1;
+    margin-top: 5px;
+}
+
+.history-item.selected {
+    border: 2px solid var(--primary-color);
+    background-color: rgba(255, 215, 0, 0.1) !important;
+}
+
 .sync-badge {
     position: absolute;
     top: 10px;
     right: 10px;
-    font-size: 0.65rem;
-    padding: 2px 8px;
-    border-radius: 10px;
 }
 
 .badge-pending { background-color: var(--danger); color: white; }
