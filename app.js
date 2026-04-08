@@ -42,7 +42,13 @@ const SOUND_PRESETS = {
     standard: { freq: 1200, type: 'sine', duration: 0.1, gain: 1.0 },
     double: { freq: 1500, type: 'square', duration: 0.05, repeat: 2, gain: 0.8 },
     deep: { freq: 400, type: 'triangle', duration: 0.2, gain: 1.2 },
-    melody: { freq: [1000, 1200, 1500], type: 'sine', duration: 0.08, gain: 0.9 }
+    melody: { freq: [1000, 1200, 1500], type: 'sine', duration: 0.08, gain: 0.9 },
+    laser: { freq: [2000, 800], type: 'sine', duration: 0.12, sweep: true, gain: 0.8 },
+    triple: { freq: 1400, type: 'sine', duration: 0.04, repeat: 3, gain: 0.7 },
+    sharp: { freq: 1800, type: 'square', duration: 0.03, gain: 0.5 },
+    coin: { freq: [950, 1600], type: 'sine', duration: 0.1, gain: 0.8 },
+    pulse: { freq: 600, type: 'sawtooth', duration: 0.05, repeat: 2, gain: 0.6 },
+    scifi: { freq: [1200, 1600, 2000, 1600], type: 'sine', duration: 0.05, gain: 0.7 }
 };
 
 function playBeep(presetKey = null) {
@@ -53,11 +59,12 @@ function playBeep(presetKey = null) {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
 
-        const playTone = (freq, startTime, duration) => {
+        const playTone = (freq, startTime, duration, targetFreq = null) => {
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             osc.type = preset.type;
             osc.frequency.setValueAtTime(freq, startTime);
+            if (targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq, startTime + duration);
             gainNode.gain.setValueAtTime(preset.gain, startTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
             osc.connect(gainNode);
@@ -67,7 +74,9 @@ function playBeep(presetKey = null) {
         };
 
         let now = audioCtx.currentTime;
-        if (Array.isArray(preset.freq)) {
+        if (preset.sweep && Array.isArray(preset.freq)) {
+            playTone(preset.freq[0], now, preset.duration, preset.freq[1]);
+        } else if (Array.isArray(preset.freq)) {
             preset.freq.forEach((f, i) => playTone(f, now + (i * preset.duration), preset.duration));
         } else if (preset.repeat) {
             for (let i = 0; i < preset.repeat; i++) {
