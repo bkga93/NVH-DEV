@@ -214,10 +214,11 @@ body {
 
 /* Phóng to và căn sát các góc quét 1:1 lồng vào khung vàng 95% */
 /* Phóng to và căn sát các góc quét 1:1 lồng vào khung vàng 95% */
-.tl { top: 0; left: 0; border-right: none; border-bottom: none; border-radius: 20px 0 0 0; }
-.tr { top: 0; right: 0; border-left: none; border-bottom: none; border-radius: 0 20px 0 0; }
-.bl { bottom: 0; left: 0; border-right: none; border-top: none; border-radius: 0 0 0 20px; }
-.br { bottom: 0; right: 0; border-left: none; border-top: none; border-radius: 0 0 20px 0; }
+/* Phóng to và căn sát các góc quét 1:1 lọt thỏm vào khung vàng ngoài cùng */
+.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; border-radius: 20px 0 0 0; }
+.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; border-radius: 0 20px 0 0; }
+.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; border-radius: 0 0 0 20px; }
+.br { bottom: -2px; right: -2px; border-left: none; border-top: none; border-radius: 0 0 20px 0; }
 
 /* Ẩn triệt để các thành phần tự vẽ của thư viện html5-qrcode để tránh lồng khung */
 #reader__scan_region {
@@ -654,6 +655,14 @@ body {
     font-weight: 950 !important;
     text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
     letter-spacing: 1px;
+}
+
+/* Kiểu riêng cho thời gian trong danh sách gợi ý - Nhỏ lạia */
+.suggest-time {
+    color: var(--gray-text) !important;
+    font-size: 0.75rem !important;
+    font-weight: normal !important;
+    text-shadow: none !important;
 }
 
 .data-update-status {

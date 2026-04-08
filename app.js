@@ -512,7 +512,7 @@ function displayRemoteData(dataToDisplay = null) {
              onclick='selectRemoteItem(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
             <div class="history-item-header">
                 <strong>${item.content || 'N/A'}</strong>
-                <span class="history-item-time highlight-time">${item.scanTime}</span>
+                <span class="history-item-time suggest-time">${item.scanTime}</span>
             </div>
             <div class="history-item-content" style="font-size: 0.75rem; opacity: 0.7;">ID: ${item.orderId}</div>
         </div>
@@ -601,6 +601,7 @@ function showToast(msg) {
 
 // --- LOGIC BẢO MẬT MÃ PIN ---
 function checkSecurity() {
+    console.log("Đang kiểm tra bảo mật...");
     const isVerifiedLocal = localStorage.getItem('nvh_verified') === 'true';
     const isVerifiedCookie = getCookie('nvh_verified') === 'true';
     const isVerified = isVerifiedLocal || isVerifiedCookie;
@@ -608,18 +609,27 @@ function checkSecurity() {
     const modal = document.getElementById('passcode-modal');
     if (isVerified) {
         if (modal) modal.style.display = 'none';
-        console.log("Xác thực: Đã thông qua.");
-        // Đồng bộ lại nếu một trong hai bị mất
+        // Luôn đảm bảo đồng bộ lại
         if (!isVerifiedLocal) localStorage.setItem('nvh_verified', 'true');
         if (!isVerifiedCookie) setCookie('nvh_verified', 'true', 365);
     } else {
         if (modal) {
             modal.style.display = 'flex';
             const input = document.getElementById('passcode-input');
-            if (input) input.focus();
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
         }
     }
 }
+
+// Theo dõi trạng thái Tab để kiểm tra lại Passcode ngay lập tức (Xử lý iPhone Safari)
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        checkSecurity();
+    }
+});
 
 function validatePasscode() {
     const input = document.getElementById('passcode-input').value;
