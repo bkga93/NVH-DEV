@@ -301,21 +301,25 @@ body {
 
 /* Remote Data Styles & Detail Panel */
 #data-view {
-    padding-bottom: 220px; /* Chừa chỗ cho detail panel */
+    padding-bottom: 280px; /* Tăng thêm từ 220px để chừa chỗ cho bảng to hơn */
 }
 
 .detail-panel {
     position: fixed;
-    bottom: 60px; /* Trên footer một chút */
+    bottom: 60px;
     left: 15px;
     right: 15px;
     background: linear-gradient(135deg, var(--surface-color), #3d0e3d);
     border: 1px solid var(--primary-color);
     border-radius: 20px;
-    padding: 15px;
+    padding: 22px; /* Tăng padding để thoáng hơn */
+    min-height: 260px; /* Tăng chiều cao lên khoảng 25% */
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
     z-index: 100;
     animation: slideUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 @keyframes slideUp {

@@ -265,7 +265,13 @@ function displayRemoteData(dataToDisplay = null) {
     const data = dataToDisplay || remoteDataCache;
     const lastUpdate = localStorage.getItem('nvh_last_update') || "Chưa rõ";
     
-    document.getElementById('last-update-time').innerText = "Cập nhật lúc: " + lastUpdate;
+    const query = document.getElementById('remote-search-input') ? document.getElementById('remote-search-input').value.trim() : "";
+    
+    // Nếu không có từ khóa tìm kiếm và không phải là dữ liệu lọc truyền vào đích danh (dataToDisplay)
+    if (!query && !dataToDisplay) {
+        list.innerHTML = "<p class='empty-msg'>Vui lòng nhập mã để tìm kiếm.</p>";
+        return;
+    }
 
     if (!data || data.length === 0) {
         list.innerHTML = "<p class='empty-msg'>Không tìm thấy dữ liệu.</p>";
