@@ -629,7 +629,7 @@ async function checkActivation() {
     const isActivated = await getAuthToken(); // Tái sử dụng IndexedDB lưu activation
     const overlay = document.getElementById('activation-overlay');
     
-    if (isActivated === '310824_KEY_ACTIVATED') {
+    if (isActivated === '151116_KEY_ACTIVATED') {
         if (overlay) overlay.style.display = 'none';
         document.body.classList.add('app-activated');
         return true;
@@ -645,8 +645,8 @@ async function activateApp() {
     const error = document.getElementById('activation-error');
     const key = input.value.trim();
     
-    if (key === '310824') {
-        await setAuthToken('310824_KEY_ACTIVATED');
+    if (key === '151116') {
+        await setAuthToken('151116_KEY_ACTIVATED');
         showToast("✨ KÍCH HOẠT DIAMOND EDITION THÀNH CÔNG!");
         setTimeout(() => location.reload(), 1000);
     } else {
@@ -1746,18 +1746,10 @@ function isMobileDevice() {
 }
 
 window.onload = () => {
-    // --- BẢN VÁ v2.0.1: CƯỠNG BỨC NHẬP KEY LẦN ĐẦU ---
-    if (localStorage.getItem('nvh_v2.0.1_reset') !== 'done') {
-        localStorage.removeItem('nvh_verified');
-        localStorage.removeItem('nvh_auth_skip');
-        // Phải xóa cả trong IndexedDB để ép hiện Activation Overlay
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        request.onsuccess = (e) => {
-            const dbRef = e.target.result;
-            const tx = dbRef.transaction(STORE_NAME, 'readwrite');
-            tx.objectStore(STORE_NAME).delete('nvh_verified');
-        };
-        localStorage.setItem('nvh_v2.0.1_reset', 'done');
+    // --- TỰ ĐỘNG KHÔI PHỤC TRẠNG THÁI ---
+    if (localStorage.getItem('nvh_v2.1.0_sync') !== 'done') {
+        // Có thể thêm logic dọn dẹp biến cũ tại đây nếu cần
+        localStorage.setItem('nvh_v2.1.0_sync', 'done');
     }
 
     if (localStorage.getItem('nvh_sound_type') === null) {
