@@ -58,6 +58,26 @@ let sessionTimeout = null;
 // --- BIẾN CỨU NGUY BẢO MẬT v1.8.7 (Anti-Loop Extreme) ---
 window.isVerifiedSession = false; 
 
+function formatDate(date) {
+    if (!(date instanceof Date)) date = new Date(date);
+    const d = date.getDate().toString().padStart(2, '0');
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const y = date.getFullYear();
+    const h = date.getHours().toString().padStart(2, '0');
+    const min = date.getMinutes().toString().padStart(2, '0');
+    const s = date.getSeconds().toString().padStart(2, '0');
+    return `${d}/${m}/${y} ${h}:${min}:${s}`;
+}
+
+function parseDate(dateStr) {
+    // DD/MM/YYYY HH:mm:ss -> Date
+    const parts = dateStr.split(' ');
+    if (parts.length < 2) return new Date(0);
+    const dParts = parts[0].split('/');
+    const tParts = parts[1].split(':');
+    return new Date(dParts[2], dParts[1] - 1, dParts[0], tParts[0], tParts[1], tParts[2]);
+}
+
 let remoteDataCache = [];
 let selectedRemoteItem = null;
 let currentPendingScan = null; 
@@ -384,7 +404,7 @@ function processValidScan(decodedText, action = 'APPEND') {
 
                 activeSession = {
                     code: decodedText,
-                    startTime: new Date().toLocaleString('vi-VN'),
+                    startTime: formatDate(now),
                     lastSeen: now,
                     snapshot: snapshot,
                     id: now
@@ -406,7 +426,7 @@ function processValidScan(decodedText, action = 'APPEND') {
             id: trackingData.id || Date.now(),
             orderId: decodedText.length > 5 ? decodedText : "NVH-" + Math.random().toString(36).substr(2, 6).toUpperCase(),
             content: decodedText,
-            scanTime: trackingData.startTime || new Date().toLocaleString('vi-VN'),
+            scanTime: trackingData.startTime || formatDate(new Date()),
             endTime: trackingData.endTime || '',
             evidenceImage: trackingData.snapshot || '',
             synced: false,
@@ -547,32 +567,22 @@ function filterRemoteData(immediate = false) {
     if (!input) return;
     const query = input.value.trim().toLowerCase();
     
-    // Nếu không có từ khóa, mặc định hiển thị toàn bộ hoặc thông báo (tùy nhu cầu)
-    // Ở đây tôi sửa để nó lọc đúng theo query
-    const filtered = remoteDataCache.filter(item => 
-        (item.content && item.content.toLowerCase().includes(query)) || 
-        (item.orderId && item.orderId.toLowerCase().includes(query))
-    );
-    
-    displayRemoteData(filtered);
+    // Hiển thị kết quả từ cache cục bộ NGAY LẬP TỨC
+    displayRemoteData();
 
     clearTimeout(searchTimeout);
+    if (!query) return;
+
+    // Chỉ tìm trên server nếu từ khóa >= 3 ký tự hoặc yêu cầu ngay
     if (query.length >= 3 || immediate) {
-        // Chỉ gọi lên server nếu từ khóa đủ dài hoặc nhấn nút tìm
-        searchTimeout = setTimeout(() => searchRemoteSheets(query), immediate ? 0 : 600);
+        searchTimeout = setTimeout(() => searchRemoteSheets(query), immediate ? 0 : 1000);
     }
 }
 
 async function searchRemoteSheets(query) {
     if (!query) return;
     const list = document.getElementById('remote-data-list');
-    const refreshBtn = document.getElementById('refresh-icon'); // Icon nếu có trong UI
     
-    // Hiển thị trạng thái đang tìm (nếu danh sách trống)
-    if (list && list.innerHTML.includes('empty-msg')) {
-        list.innerHTML = "<p class='empty-msg'>🔍 Đang tìm kiếm trên máy chủ...</p>";
-    }
-
     try {
         const response = await fetch(APP_SCRIPT_URL, {
             method: "POST",
@@ -581,23 +591,26 @@ async function searchRemoteSheets(query) {
         });
         const data = await response.json();
         
-        // Cập nhật bộ nhớ đệm (Không lọc trùng lặp theo yêu cầu v1.8.8)
+        // Cập nhật bộ nhớ đệm (Deduplicate khi nhận dữ liệu mới)
         if (data && data.length > 0) {
-            // Chỉ thêm các bản ghi mới vào đầu cache mà KHÔNG dùng findIndex lọc trùng
-            remoteDataCache = [...data, ...remoteDataCache].slice(0, 1000);
+            data.forEach(newItem => {
+                const idx = remoteDataCache.findIndex(old => old.content === newItem.content);
+                if (idx === -1) {
+                    remoteDataCache.unshift(newItem);
+                } else if (parseDate(newItem.scanTime) > parseDate(remoteDataCache[idx].scanTime)) {
+                    remoteDataCache[idx] = newItem;
+                }
+            });
             localStorage.setItem('nvh_remote_cache', JSON.stringify(remoteDataCache));
         }
         
-        // Hiển thị kết quả mới nhất cho query hiện tại
+        // Cập nhật lại giao diện sau khi có dữ liệu từ server
         const currentQuery = document.getElementById('remote-search-input').value.trim().toLowerCase();
         if (currentQuery === query.toLowerCase()) {
-            displayRemoteData(data);
+            displayRemoteData();
         }
     } catch (error) {
         console.error("Search error:", error);
-        if (list && list.innerHTML.includes('Đang tìm')) {
-            list.innerHTML = "<p class='empty-msg text-danger'>❌ Lỗi kết nối máy chủ.</p>";
-        }
     }
 }
 
@@ -610,18 +623,43 @@ async function fetchDataFromSheets(isAuto = false) {
             body: JSON.stringify({ action: "GET_ALL" }),
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
-        const data = await response.json();
+        let data = await response.json();
+        
+        if (data && Array.isArray(data)) {
+            // 1. Lọc dữ liệu trong vòng 30 ngày (1 tháng)
+            const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+            data = data.filter(item => {
+                if (!item.scanTime) return false;
+                const itemDate = parseDate(item.scanTime);
+                return itemDate.getTime() >= thirtyDaysAgo;
+            });
+
+            // 2. Loại bỏ trùng lặp dựa trên Mã đơn hàng (content) - Giữ bản ghi mới nhất
+            const uniqueMap = new Map();
+            data.forEach(item => {
+                const existing = uniqueMap.get(item.content);
+                if (!existing || parseDate(item.scanTime) > parseDate(existing.scanTime)) {
+                    uniqueMap.set(item.content, item);
+                }
+            });
+            data = Array.from(uniqueMap.values());
+
+            // Sắp xếp lại theo thời gian mới nhất lên đầu
+            data.sort((a, b) => parseDate(b.scanTime) - parseDate(a.scanTime));
+        }
+
         remoteDataCache = data;
         localStorage.setItem('nvh_remote_cache', JSON.stringify(data));
-        const now = new Date().toLocaleString('vi-VN');
+        const now = formatDate(new Date());
         localStorage.setItem('nvh_last_update', now);
         
         updateLastUpdateTimeDisplay(now);
         displayRemoteData();
         
-        if (!isAuto) showToast("Đã cập nhật dữ liệu!");
+        if (!isAuto) showToast(`Đã tải ${data.length} đơn hàng trong tháng qua!`);
     } catch (error) {
-        if (!isAuto) showToast("Lỗi cập nhật!");
+        console.error("Fetch error:", error);
+        if (!isAuto) showToast("Lỗi cập nhật dữ liệu!");
     } finally {
         if (btn) btn.classList.remove('refreshing');
     }
@@ -634,21 +672,29 @@ function updateLastUpdateTimeDisplay(time) {
 
 function displayRemoteData(dataToDisplay = null) {
     const list = document.getElementById('remote-data-list');
-    const data = dataToDisplay || remoteDataCache;
+    if (!list) return;
+
+    const input = document.getElementById('remote-search-input');
+    const query = input ? input.value.trim().toLowerCase() : "";
     
-    const query = document.getElementById('remote-search-input') ? document.getElementById('remote-search-input').value.trim() : "";
-    
+    // Yêu cầu: Chưa gõ thì không hiện danh sách
     if (!query && !dataToDisplay) {
         list.innerHTML = "<p class='empty-msg'>Vui lòng nhập mã để tìm kiếm.</p>";
+        list.style.display = 'block';
         return;
     }
 
-    if (!data || data.length === 0) {
-        list.innerHTML = "<p class='empty-msg'>Không tìm thấy dữ liệu.</p>";
+    const data = dataToDisplay || (query ? remoteDataCache.filter(item => 
+        (item.content && item.content.toLowerCase().includes(query)) || 
+        (item.orderId && item.orderId.toLowerCase().includes(query))
+    ) : []);
+
+    if (data.length === 0) {
+        list.innerHTML = `<p class='empty-msg'>${query ? 'Không tìm thấy dữ liệu.' : 'Bắt đầu gõ để tìm gợi ý...'}</p>`;
         return;
     }
 
-    list.innerHTML = data.map(item => `
+    list.innerHTML = data.slice(0, 50).map(item => `
         <div class="history-item ${selectedRemoteItem && selectedRemoteItem.orderId === item.orderId ? 'selected' : ''}" 
              onclick='selectRemoteItem(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
             <div class="history-item-header">
@@ -1194,19 +1240,21 @@ function filterReviewData(immediate = false) {
     const query = input.value.toLowerCase().trim();
     const list = document.getElementById('review-data-list');
     
-    if (query.length < 3 && !immediate) {
+    if (!query) {
         list.style.display = 'none';
         return;
     }
 
-    // 1. Lọc từ bộ nhớ đệm trước
+    // hiển thị list để gợi ý
+    list.style.display = 'block';
+
+    // 1. Lọc từ bộ nhớ đệm trước - HIỂN THỊ NGAY
     const filtered = remoteDataCache.filter(item => 
         (item.content && item.content.toLowerCase().includes(query)) || 
         (item.orderId && item.orderId.toLowerCase().includes(query))
     );
 
     if (filtered.length > 0) {
-        list.style.display = 'block';
         list.innerHTML = filtered.slice(0, 10).map(item => `
             <div class="history-item" onclick='selectReviewItem(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
                 <div class="history-item-header">
@@ -1216,16 +1264,13 @@ function filterReviewData(immediate = false) {
                 <div class="history-item-content" style="font-size: 0.7rem; opacity: 0.6;">ID: ${item.orderId}</div>
             </div>
         `).join('');
-    } else if (query.length >= 3) {
-        list.style.display = 'block';
-        list.innerHTML = "<p class='empty-msg'>Đang tìm trên hệ thống...</p>";
     } else {
-        list.style.display = 'none';
+        list.innerHTML = "<p class='empty-msg'>Đang gõ để tìm...</p>";
     }
 
-    // 2. Tìm kiếm trên Cloud (Sheets)
+    // 2. Tìm kiếm trên Cloud (Sheets) - De-bounced
     clearTimeout(reviewSearchTimeout);
-    if (query.length >= 2 || immediate) {
+    if (query.length >= 3 || immediate) {
         reviewSearchTimeout = setTimeout(async () => {
             try {
                 const response = await fetch(APP_SCRIPT_URL, {
@@ -1235,32 +1280,25 @@ function filterReviewData(immediate = false) {
                 });
                 const data = await response.json();
                 
-                // Cập nhật bộ nhớ đệm review
+                // Cập nhật bộ nhớ đệm
                 if (data && data.length > 0) {
                     data.forEach(newItem => {
-                        const idx = remoteDataCache.findIndex(old => old.orderId === newItem.orderId);
-                        if (idx === -1) remoteDataCache.unshift(newItem);
+                        const idx = remoteDataCache.findIndex(old => old.content === newItem.content);
+                        if (idx === -1) {
+                            remoteDataCache.unshift(newItem);
+                        } else if (parseDate(newItem.scanTime) > parseDate(remoteDataCache[idx].scanTime)) {
+                            remoteDataCache[idx] = newItem;
+                        }
                     });
+                    localStorage.setItem('nvh_remote_cache', JSON.stringify(remoteDataCache));
                 }
                 
                 const currentQuery = document.getElementById('review-order-id').value.trim().toLowerCase();
                 if (currentQuery === query) {
-                    if (data.length > 0) {
-                        list.innerHTML = data.slice(0, 10).map(item => `
-                            <div class="history-item" onclick='selectReviewItem(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
-                                <div class="history-item-header">
-                                    <strong>${item.content || item.orderId}</strong>
-                                    <span class="history-item-time">${item.scanTime}</span>
-                                </div>
-                                <div class="history-item-content" style="font-size: 0.7rem; opacity: 0.6;">ID: ${item.orderId}</div>
-                            </div>
-                        `).join('');
-                    } else if (filtered.length === 0) {
-                        list.innerHTML = "<p class='empty-msg'>Không tìm thấy trên hệ thống.</p>";
-                    }
+                    filterReviewData(false); // Gọi lại để update UI từ cache vừa cập nhật
                 }
             } catch (e) { console.error("Cloud search error:", e); }
-        }, immediate ? 0 : 800);
+        }, immediate ? 0 : 1500);
     }
 }
 
@@ -2027,7 +2065,7 @@ function handleTrackingScan(code, canvas) {
         // Bắt đầu session mới
         activeSession = {
             code: code,
-            startTime: new Date().toLocaleString('vi-VN'),
+            startTime: formatDate(new Date()),
             lastSeen: now,
             snapshot: canvas.toDataURL('image/jpeg', 0.5),
             id: now
@@ -2057,7 +2095,7 @@ function checkSessionTimeout() {
 function finalizeSession() {
     if (!activeSession) return;
     
-    activeSession.endTime = new Date().toLocaleString('vi-VN');
+    activeSession.endTime = formatDate(new Date());
     processValidScan(activeSession.code, 'UPDATE_END', true, activeSession);
     showToast("✅ Hoàn tất: " + activeSession.code);
     
