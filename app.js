@@ -648,8 +648,8 @@ function displayRemoteData(dataToDisplay = null) {
         );
     }
     
-    if (!query && !dataToDisplay && (!data || data.length === 0)) {
-        list.innerHTML = "<p class='empty-msg'>Vui lòng nhập mã để tìm kiếm.</p>";
+    if (query.length < 3 && !dataToDisplay) {
+        list.innerHTML = "<p class='empty-msg'>Vui lòng nhập ít nhất 3 ký tự để tìm kiếm.</p>";
         return;
     }
 
@@ -1203,7 +1203,7 @@ function filterReviewData(immediate = false) {
     const query = input.value.toLowerCase().trim();
     const list = document.getElementById('review-data-list');
     
-    if (query.length === 0 && !immediate) {
+    if (query.length < 3 && !immediate) {
         list.style.display = 'none';
         return;
     }

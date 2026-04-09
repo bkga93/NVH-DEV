@@ -8,6 +8,9 @@ Tất cả các thay đổi quan trọng đối với dự án **TCT Scanner Pro
 ### Added
 - Tạo file `CHANGELOG.md` chính thức để theo dõi lịch sử cập nhật.
 - Cập nhật hiển thị Version v2.3.2 tại Tiêu đề và Footer của ứng dụng.
+### Fixed
+- **Quy tắc tìm kiếm 3 ký tự:** Áp dụng quy định chỉ hiển thị gợi ý và kết quả khi người dùng gõ từ 3 ký tự trở lên để tránh làm chậm hệ thống và hiện dữ liệu thừa.
+- Ẩn danh sách gợi ý tự động khi từ khóa quá ngắn tại tab Dữ liệu và Xem lại.
 
 ---
 
