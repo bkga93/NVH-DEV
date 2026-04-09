@@ -361,9 +361,46 @@ function processValidScan(decodedText, action = 'APPEND') {
         const scanModeEl = document.querySelector('input[name="scanMode"]:checked');
         const scanMode = scanModeEl ? scanModeEl.value : 'single';
         
-        // Hỗ trợ tracking v2.3.0
+        // --- LOGIC TRACKING v2.3.0 (DÙNG CHUNG CHO CẢ USB & IP CAM) ---
         const isTracking = arguments[2] === true;
-        const trackingData = arguments[3] || {};
+        let trackingData = arguments[3] || {};
+
+        // Nếu quét từ Camera USB (không qua ipCameraScanLoop) thì tự tạo session
+        if (!isTracking && pcMode && scanMode === 'continuous') {
+            const now = Date.now();
+            if (!activeSession || activeSession.code !== decodedText) {
+                if (activeSession) finalizeSession();
+                
+                // Chụp ảnh từ Camera USB
+                const video = document.querySelector('#reader video');
+                let snapshot = '';
+                if (video) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    snapshot = canvas.toDataURL('image/jpeg', 0.5);
+                }
+
+                activeSession = {
+                    code: decodedText,
+                    startTime: new Date().toLocaleString('vi-VN'),
+                    lastSeen: now,
+                    snapshot: snapshot,
+                    id: now
+                };
+                trackingData = activeSession;
+                playBeep();
+                showToast("📦 Bắt đầu đóng gói: " + decodedText);
+                
+                // Khởi động vòng lặp kiểm tra biến mất cho USB Cam
+                if (!trackingInterval) trackingInterval = setInterval(checkSessionTimeout, 1000);
+            } else {
+                // Cập nhật thời gian thấy lần cuối
+                activeSession.lastSeen = now;
+                return; // Không cần xử lý tiếp để tránh lặp dòng
+            }
+        }
 
         const orderData = {
             id: trackingData.id || Date.now(),
@@ -379,7 +416,6 @@ function processValidScan(decodedText, action = 'APPEND') {
         saveToQueue(orderData);
         processSyncQueue();
 
-        // v1.6.5: Lấy ID để ghi hình thủ công
         lastScannedId = orderData.orderId;
         updatePCDisplay(orderData.orderId);
 
@@ -397,6 +433,8 @@ function processValidScan(decodedText, action = 'APPEND') {
         isProcessing = false;
     }
 }
+
+let trackingInterval = null;
 
 // --- LOGIC XỬ LÝ TRÙNG LẶP ---
 function showDuplicateModal(code) {
@@ -509,16 +547,18 @@ function filterRemoteData(immediate = false) {
     if (!input) return;
     const query = input.value.trim().toLowerCase();
     
-    // Ưu tiên lọc từ cache máy trước để phản hồi TỨC THÌ (v1.8.8)
+    // Nếu không có từ khóa, mặc định hiển thị toàn bộ hoặc thông báo (tùy nhu cầu)
+    // Ở đây tôi sửa để nó lọc đúng theo query
     const filtered = remoteDataCache.filter(item => 
         (item.content && item.content.toLowerCase().includes(query)) || 
         (item.orderId && item.orderId.toLowerCase().includes(query))
     );
+    
     displayRemoteData(filtered);
 
     clearTimeout(searchTimeout);
     if (query.length >= 3 || immediate) {
-        // Nếu query đủ dài hoặc yêu cầu tìm ngay, gọi lên Server
+        // Chỉ gọi lên server nếu từ khóa đủ dài hoặc nhấn nút tìm
         searchTimeout = setTimeout(() => searchRemoteSheets(query), immediate ? 0 : 600);
     }
 }
@@ -594,17 +634,27 @@ function updateLastUpdateTimeDisplay(time) {
 
 function displayRemoteData(dataToDisplay = null) {
     const list = document.getElementById('remote-data-list');
-    const data = dataToDisplay || remoteDataCache;
+    const input = document.getElementById('remote-search-input');
+    const query = input ? input.value.trim().toLowerCase() : "";
     
-    const query = document.getElementById('remote-search-input') ? document.getElementById('remote-search-input').value.trim() : "";
+    // Nếu có dữ liệu truyền vào (đã lọc), dùng nó. Nếu không, dùng cache gốc.
+    let data = dataToDisplay || remoteDataCache;
+
+    // QUAN TRỌNG: Nếu có query mà data chưa được lọc, ta phải lọc lại
+    if (query && !dataToDisplay) {
+        data = data.filter(item => 
+            (item.content && item.content.toLowerCase().includes(query)) || 
+            (item.orderId && item.orderId.toLowerCase().includes(query))
+        );
+    }
     
-    if (!query && !dataToDisplay) {
+    if (!query && !dataToDisplay && (!data || data.length === 0)) {
         list.innerHTML = "<p class='empty-msg'>Vui lòng nhập mã để tìm kiếm.</p>";
         return;
     }
 
     if (!data || data.length === 0) {
-        list.innerHTML = "<p class='empty-msg'>Không tìm thấy dữ liệu.</p>";
+        list.innerHTML = "<p class='empty-msg'>Không tìm thấy dữ liệu phù hợp.</p>";
         return;
     }
 
@@ -612,7 +662,7 @@ function displayRemoteData(dataToDisplay = null) {
         <div class="history-item ${selectedRemoteItem && selectedRemoteItem.orderId === item.orderId ? 'selected' : ''}" 
              onclick='selectRemoteItem(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
             <div class="history-item-header">
-                <strong>${item.content || 'N/A'}</strong>
+                <strong>${item.content || item.orderId || 'N/A'}</strong>
                 <span class="history-item-time suggest-time">${item.scanTime}</span>
             </div>
             <div class="history-item-content" style="font-size: 0.75rem; opacity: 0.7;">ID: ${item.orderId}</div>
@@ -1153,12 +1203,12 @@ function filterReviewData(immediate = false) {
     const query = input.value.toLowerCase().trim();
     const list = document.getElementById('review-data-list');
     
-    if (query.length < 3 && !immediate) {
+    if (query.length === 0 && !immediate) {
         list.style.display = 'none';
         return;
     }
 
-    // 1. Phản hồi nhanh từ bộ nhớ đệm
+    // 1. Lọc từ bộ nhớ đệm trước
     const filtered = remoteDataCache.filter(item => 
         (item.content && item.content.toLowerCase().includes(query)) || 
         (item.orderId && item.orderId.toLowerCase().includes(query))
@@ -1175,9 +1225,11 @@ function filterReviewData(immediate = false) {
                 <div class="history-item-content" style="font-size: 0.7rem; opacity: 0.6;">ID: ${item.orderId}</div>
             </div>
         `).join('');
-    } else {
+    } else if (query.length >= 3) {
         list.style.display = 'block';
         list.innerHTML = "<p class='empty-msg'>Đang tìm trên hệ thống...</p>";
+    } else {
+        list.style.display = 'none';
     }
 
     // 2. Tìm kiếm trên Cloud (Sheets)
@@ -2016,12 +2068,17 @@ function finalizeSession() {
     
     activeSession.endTime = new Date().toLocaleString('vi-VN');
     processValidScan(activeSession.code, 'UPDATE_END', true, activeSession);
-    showToast("✅ Hoàn thành đóng gói: " + activeSession.code);
+    showToast("✅ Hoàn tất: " + activeSession.code);
     
     activeSession = null;
     if (sessionTimeout) {
         clearTimeout(sessionTimeout);
         sessionTimeout = null;
+    }
+    // Dừng luôn cả interval kiểm tra nếu không còn session
+    if (trackingInterval) {
+        clearInterval(trackingInterval);
+        trackingInterval = null;
     }
 }
 
