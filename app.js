@@ -1,13 +1,11 @@
 // ==========================================
-// TCT SCANNER PRO V1.1.9.3 - CLOUD ERA
+// TCT SCANNER PRO V1.1.9.4 - CLOUD ERA
 // PHIÊN BẢN DIAMOND CLOUD (FIREBASE)
 // ==========================================
 
 // --- BIẾN TOÀN CỤC ---
 let isScanning = false;
 let html5QrCode = null;
-let currentScannerId = null;
-let useIPCamera = false;
 let scanMode = 'single'; 
 let localHistory = JSON.parse(localStorage.getItem('nvh_scan_history') || '[]');
 let remoteDataCache = [];
@@ -17,39 +15,49 @@ let pendingScanCode = null;
 let lastUpdateTimestamp = null;
 let isRemoteListVisible = false;
 
-// --- CÀI ĐẶT MẶC ĐỊNH ---
-const DEFAULT_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAN-J63oxR-R415XnjXKt0RUIySQJQAZC0",
-    authDomain: "tct-scanner-pro.firebaseapp.com",
-    databaseURL: "https://tct-scanner-pro-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "tct-scanner-pro",
-    storageBucket: "tct-scanner-pro.firebasestorage.app",
-    messagingSenderId: "486592614773",
-    appId: "1:486592614773:web:bd2861a3dcdf0468ee833c"
+// --- CÀI ĐẶT NGƯỜI DÙNG ---
+const settings = {
+    userName: localStorage.getItem('nvh_user_name') || 'Admin',
+    beepType: localStorage.getItem('nvh_beep_type') || 'default',
+    vibrate: localStorage.getItem('nvh_vibrate') === 'true',
+    theme: localStorage.getItem('nvh_theme') || 'plum-gold',
+    fontSize: localStorage.getItem('nvh_font_size') || '100',
+    firebase: JSON.parse(localStorage.getItem('nvh_firebase_config') || 'null')
+};
+
+const BEEP_SOUNDS = {
+    default: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+    modern: 'https://assets.mixkit.co/active_storage/sfx/438/438-preview.mp3',
+    cyber: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
+    sharp: 'https://assets.mixkit.co/active_storage/sfx/2569/2569-preview.mp3',
+    gentle: 'https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3'
 };
 
 // --- KHỞI TẠO APP ---
 window.onload = async () => {
-    console.log("🚀 TCT APP V1.1.9.3 - CLOUD ERA IS LIVE!");
+    console.log("🚀 TCT APP V1.1.9.4 - CLOUD ERA IS LIVE!");
+    applyTheme(settings.theme);
+    applyFontSize(settings.fontSize);
     checkActivation();
     initFirebase();
     renderLocalHistory();
-    refreshCameraList();
 };
 
 // --- HỆ THỐNG CLOUD (FIREBASE) ---
 function initFirebase() {
-    const config = JSON.parse(localStorage.getItem('nvh_firebase_config') || JSON.stringify(DEFAULT_FIREBASE_CONFIG));
+    const config = settings.firebase || {
+        apiKey: "AIzaSyAN-J63oxR-R415XnjXKt0RUIySQJQAZC0",
+        authDomain: "tct-scanner-pro.firebaseapp.com",
+        databaseURL: "https://tct-scanner-pro-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "tct-scanner-pro",
+        storageBucket: "tct-scanner-pro.firebasestorage.app",
+        messagingSenderId: "486592614773",
+        appId: "1:486592614773:web:bd2861a3dcdf0468ee833c"
+    };
     
     try {
-        if (!firebase.apps.length) {
-            firebaseApp = firebase.initializeApp(config);
-        } else {
-            firebaseApp = firebase.app();
-        }
+        if (!firebase.apps.length) firebase.initializeApp(config);
         database = firebase.database();
-        
-        // Listener thời gian thực
         database.ref('scans').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
@@ -57,44 +65,30 @@ function initFirebase() {
                     orderId: key,
                     ...data[key]
                 })).sort((a, b) => new Date(b.time.split(' ').reverse().join(' ')) - new Date(a.time.split(' ').reverse().join(' ')));
-                
-                lastUpdateTimestamp = new Date().toLocaleTimeString('vi-VN');
                 updateCloudInfoUI();
-                
-                if (isRemoteListVisible) {
-                    displayRemoteData(remoteDataCache);
-                }
+                if (isRemoteListVisible) displayRemoteData(remoteDataCache);
             }
         });
-    } catch (error) {
-        console.error("Firebase Init Error:", error);
-    }
+    } catch (e) { console.error("Firebase Sync Error"); }
 }
 
 async function saveToCloud(orderId, content, isOverwrite = true) {
     if (!database) return;
-    const userName = localStorage.getItem('nvh_user_name') || 'User';
     const now = new Date().toLocaleString('vi-VN');
-    
     try {
         await database.ref('scans/' + orderId).set({
             content: content,
             time: now,
-            user: userName
+            user: settings.userName
         });
         showToast(isOverwrite ? "✅ Đã ghi đè Cloud!" : "✅ Đã thêm bản sao Cloud!");
-    } catch (error) {
-        showToast("❌ Lỗi đẩy Cloud!");
-    }
+    } catch (e) { showToast("❌ Lỗi đẩy Cloud!"); }
 }
 
 // --- MÁY QUÉT (SCANNER) ---
 async function toggleScanner() {
     if (html5QrCode) {
-        try {
-            const state = html5QrCode.getState();
-            if (state === 2 || state === 3) await html5QrCode.stop();
-        } catch (e) {}
+        try { if (html5QrCode.getState() > 1) await html5QrCode.stop(); } catch (e) {}
         html5QrCode = null;
     }
     
@@ -106,19 +100,15 @@ async function toggleScanner() {
 
     await new Promise(r => setTimeout(r, 100));
     html5QrCode = new Html5Qrcode("reader");
-    
     const config = { fps: 20, aspectRatio: 1.0 };
     
     try {
         const cameraId = localStorage.getItem('nvh_scanner_cam_id');
         const scanConfig = cameraId ? { deviceId: cameraId } : { facingMode: "environment" };
-        
         await html5QrCode.start(scanConfig, config, onScanSuccess);
         isScanning = true;
         updateScannerUI();
-    } catch (err) {
-        alert("Lỗi camera: " + err);
-    }
+    } catch (err) { alert("Lỗi camera: " + err); }
 }
 
 function onScanSuccess(decodedText) {
@@ -139,8 +129,8 @@ function onScanSuccess(decodedText) {
     } else {
         processFinalScan(orderId, code);
         playBeep();
+        if (settings.vibrate) navigator.vibrate(200);
     }
-    
     document.getElementById('pc-last-scanned').innerText = code;
 }
 
@@ -171,17 +161,13 @@ function handleDuplicate(choice) {
 
 function getNextSuffix(baseId) {
     let suffix = 2;
-    while (remoteDataCache.some(item => item.orderId === `${baseId}(${suffix})`)) {
-        suffix++;
-    }
+    while (remoteDataCache.some(item => item.orderId === `${baseId}(${suffix})`)) suffix++;
     return `(${suffix})`;
 }
 
-function extractOrderId(text) {
-    return text.split(/[\s,]+/)[0];
-}
+function extractOrderId(text) { return text.split(/[\s,]+/)[0]; }
 
-// --- GIAO DIỆN (UI) ---
+// --- GIAO DIỆN & TABS ---
 function switchTab(tabName) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -192,20 +178,17 @@ function switchTab(tabName) {
 function showAllRemoteData() {
     isRemoteListVisible = true;
     displayRemoteData(remoteDataCache);
-    showToast("📊 Hiển thị tất cả dữ liệu");
 }
 
 function refreshCloudData() {
     const statusLine = document.getElementById('update-status-line');
-    statusLine.innerHTML = `<span style="color:var(--primary-color);">⏳ Đang cập nhật dữ liệu...</span>`;
-    
-    const toast = showToast("⏳ Đang cập nhật từ Cloud...", "info", true);
-    
-    // Giả lập/Đợi Firebase phản hồi
+    statusLine.innerHTML = `<span style="color:var(--primary-color);">⏳ Đang cập nhật...</span>`;
+    const toast = showToast("⏳ Đang đồng bộ...", "info", true);
     setTimeout(() => {
         if (toast) toast.remove();
         statusLine.innerHTML = `✅ Cập nhật xong: <i>${new Date().toLocaleTimeString('vi-VN')}</i>`;
-    }, 1200);
+        updateCloudInfoUI();
+    }, 1500);
 }
 
 function updateCloudInfoUI() {
@@ -216,45 +199,23 @@ function updateCloudInfoUI() {
 function displayRemoteData(data) {
     const list = document.getElementById('remote-data-list');
     list.innerHTML = '';
-    if (data.length === 0) {
-        list.innerHTML = '<div class="empty-msg">Chưa có dữ liệu Cloud.</div>';
-        return;
-    }
+    if (data.length === 0) { list.innerHTML = '<div class="empty-msg">Trống</div>'; return; }
     data.forEach(item => {
         const div = document.createElement('div');
         div.className = 'history-item';
         div.onclick = () => showOrderDetails(item);
-        div.innerHTML = `
-            <div class="history-item-header">
-                <span class="history-item-time">${item.time}</span>
-                <span style="color:var(--gray-text)">👤 ${item.user}</span>
-            </div>
-            <div class="history-item-content">${item.orderId}</div>
-        `;
+        div.innerHTML = `<div class="history-item-header"><span>${item.time}</span><span>👤 ${item.user}</span></div><div class="history-item-content">${item.orderId}</div>`;
         list.appendChild(div);
     });
 }
 
 function showOrderDetails(item) {
     const body = document.getElementById('order-detail-content');
-    if (!body) return;
     body.innerHTML = `
-        <div class="detail-row">
-            <span class="detail-label">MÃ ĐƠN HÀNG:</span>
-            <span class="detail-value">${item.orderId}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">THỜI GIAN QUÉT:</span>
-            <span class="highlight-time">${item.time}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">NGƯỜI QUÉT:</span>
-            <span class="detail-value">${item.user || 'N/A'}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">NỘI DUNG GỐC:</span>
-            <span class="detail-value" style="font-size:0.75rem; word-break:break-all;">${item.content}</span>
-        </div>
+        <div class="detail-row"><span class="detail-label">MÃ ĐƠN HÀNG:</span><span class="detail-value">${item.orderId}</span></div>
+        <div class="detail-row"><span class="detail-label">THỜI GIAN:</span><span class="highlight-time">${item.time}</span></div>
+        <div class="detail-row"><span class="detail-label">NGƯỜI QUÉT:</span><span class="detail-value">${item.user || 'Admin'}</span></div>
+        <div class="detail-row"><span class="detail-label">NỘI DUNG:</span><span class="detail-value" style="font-size:0.75rem;">${item.content}</span></div>
     `;
     openModal('detail-modal');
 }
@@ -266,12 +227,7 @@ function renderLocalHistory() {
     localHistory.forEach(item => {
         const div = document.createElement('div');
         div.className = 'history-item';
-        div.innerHTML = `
-            <div class="history-item-header">
-                <span class="history-item-time">${item.time}</span>
-            </div>
-            <div class="history-item-content">${item.content}</div>
-        `;
+        div.innerHTML = `<div class="history-item-header"><span>${item.time}</span></div><div class="history-item-content">${item.content}</div>`;
         list.appendChild(div);
     });
 }
@@ -283,78 +239,157 @@ function updateScannerUI() {
     btn.style.color = isScanning ? "white" : "var(--surface-color)";
 }
 
-function showToast(msg, type = "", persistent = false) {
-    const toast = document.createElement('div');
-    toast.className = `toast show ${type}`;
-    toast.innerText = msg;
-    document.body.appendChild(toast);
-    if (!persistent) {
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
-    }
-    return toast;
-}
-
-// --- MODALS & SIDREBAR ---
-function toggleDrawer(show) {
-    document.getElementById('side-drawer').classList.toggle('active', show);
-    document.getElementById('drawer-overlay').style.display = show ? 'block' : 'none';
-}
-
-function openModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) modal.style.display = 'flex';
-}
-
-function closeModal(id) {
-    const modal = document.getElementById(id);
-    if (modal) modal.style.display = 'none';
-}
-
+// --- CÀI ĐẶT (SETTINGS) v1.1.9.4 ---
+let currentSettingsGroup = '';
 function openSettings(group) {
+    currentSettingsGroup = group;
+    const title = document.getElementById('settings-title');
+    const body = document.getElementById('settings-body');
+    body.innerHTML = '';
+    
+    switch(group) {
+        case 'audio':
+            title.innerText = "CÀI ĐẶT ÂM THANH";
+            body.innerHTML = `
+                <div class="settings-group">
+                    <label class="settings-label">Kiểu tiếng kêu:</label>
+                    <select id="set-beep-type" class="settings-select">
+                        <option value="default" ${settings.beepType==='default'?'selected':''}>Mặc định</option>
+                        <option value="modern" ${settings.beepType==='modern'?'selected':''}>Hiện đại</option>
+                        <option value="cyber" ${settings.beepType==='cyber'?'selected':''}>Công nghệ</option>
+                        <option value="sharp" ${settings.beepType==='sharp'?'selected':''}>Đanh gọn</option>
+                        <option value="gentle" ${settings.beepType==='gentle'?'selected':''}>Nhẹ nhàng</option>
+                    </select>
+                </div>
+                <div class="toggle-container">
+                    <span>Rung khi thành công:</span>
+                    <label class="switch"><input type="checkbox" id="set-vibrate" ${settings.vibrate?'checked':''}><span class="slider"></span></label>
+                </div>
+                <button class="pc-action-btn" style="margin-top:10px; padding:10px;" onclick="testBeep()">🔊 NGHE THỬ</button>
+            `;
+            break;
+        case 'user':
+            title.innerText = "NGƯỜI DÙNG & NHÂN VIÊN";
+            body.innerHTML = `
+                <div class="settings-group">
+                    <label class="settings-label">Tên người vận hành:</label>
+                    <input type="text" id="set-user-name" class="settings-input" value="${settings.userName}" placeholder="Nhập tên bác...">
+                </div>
+            `;
+            break;
+        case 'display':
+            title.innerText = "GIAO DIỆN & HIỂN THỊ";
+            body.innerHTML = `
+                <div class="settings-group">
+                    <label class="settings-label">Chủ đề (Theme):</label>
+                    <select id="set-theme" class="settings-select">
+                        <optgroup label="Của Tối (Dark)">
+                            <option value="plum-gold" ${settings.theme==='plum-gold'?'selected':''}>Tím Gold (Gốc)</option>
+                            <option value="midnight" ${settings.theme==='midnight'?'selected':''}>Midnight Cyan</option>
+                            <option value="ruby" ${settings.theme==='ruby'?'selected':''}>Onyx Ruby</option>
+                            <option value="emerald" ${settings.theme==='emerald'?'selected':''}>Forest Emerald</option>
+                            <option value="silver" ${settings.theme==='silver'?'selected':''}>Slate Silver</option>
+                        </optgroup>
+                        <optgroup label="Cửa Sáng (Light)">
+                            <option value="light-blue" ${settings.theme==='light-blue'?'selected':''}>Trắng Blue</option>
+                            <option value="light-sepia" ${settings.theme==='light-sepia'?'selected':''}>Kem Sepia</option>
+                            <option value="light-lavender" ${settings.theme==='light-lavender'?'selected':''}>Oải hương</option>
+                            <option value="light-sky" ${settings.theme==='light-sky'?'selected':''}>Bầu trời</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="settings-group">
+                    <label class="settings-label">Cỡ chữ (%):</label>
+                    <input type="range" id="set-font-size" min="80" max="150" value="${settings.fontSize}" style="width:100%">
+                    <div style="text-align:right; font-size:0.75rem;">${settings.fontSize}%</div>
+                </div>
+            `;
+            break;
+        case 'camera':
+            title.innerText = "CÀI ĐẶT CAMERA";
+            body.innerHTML = `<div id="cam-list-render">Đang tải...</div>`;
+            refreshCameraList();
+            break;
+    }
+    
     openModal('settings-modal');
     toggleDrawer(false);
 }
 
-function openChangelog() {
-    openModal('changelog-modal');
-    toggleDrawer(false);
-}
-
-// --- BẢO MẬT ---
-function checkActivation() {
-    if (localStorage.getItem('nvh_activated') !== 'true') {
-        document.getElementById('activation-overlay').style.display = 'flex';
+function saveSettings() {
+    if (currentSettingsGroup === 'audio') {
+        settings.beepType = document.getElementById('set-beep-type').value;
+        settings.vibrate = document.getElementById('set-vibrate').checked;
+        localStorage.setItem('nvh_beep_type', settings.beepType);
+        localStorage.setItem('nvh_vibrate', settings.vibrate);
+    } else if (currentSettingsGroup === 'user') {
+        settings.userName = document.getElementById('set-user-name').value || 'Admin';
+        localStorage.setItem('nvh_user_name', settings.userName);
+    } else if (currentSettingsGroup === 'display') {
+        settings.theme = document.getElementById('set-theme').value;
+        settings.fontSize = document.getElementById('set-font-size').value;
+        localStorage.setItem('nvh_theme', settings.theme);
+        localStorage.setItem('nvh_font_size', settings.fontSize);
+        applyTheme(settings.theme);
+        applyFontSize(settings.fontSize);
     }
+    showToast("💾 Đã lưu cài đặt!");
+    closeModal('settings-modal');
 }
 
+function applyTheme(t) { document.body.dataset.theme = t; }
+function applyFontSize(s) { document.documentElement.style.fontSize = (s / 100) * 16 + 'px'; }
+
+function testBeep() {
+    const type = document.getElementById('set-beep-type').value;
+    new Audio(BEEP_SOUNDS[type]).play().catch(()=>{});
+}
+
+function playBeep() { new Audio(BEEP_SOUNDS[settings.beepType] || BEEP_SOUNDS.default).play().catch(()=>{}); }
+function playDuplicateSound() { new Audio(BEEP_SOUNDS.cyber).play().catch(()=>{}); }
+
+// --- KHÁC ---
+function toggleDrawer(show) {
+    document.getElementById('side-drawer').classList.toggle('active', show);
+    document.getElementById('drawer-overlay').style.display = show ? 'block' : 'none';
+}
+function openModal(id) { const m = document.getElementById(id); if(m) m.style.display = 'flex'; }
+function closeModal(id) { const m = document.getElementById(id); if(m) m.style.display = 'none'; }
+function openChangelog() { openModal('changelog-modal'); toggleDrawer(false); }
+
+function checkActivation() { if (localStorage.getItem('nvh_activated') !== 'true') openModal('activation-overlay'); }
 function activateApp() {
-    const key = document.getElementById('activation-key').value;
-    if (key === '310824') {
+    if (document.getElementById('activation-key').value === '310824') {
         localStorage.setItem('nvh_activated', 'true');
-        document.getElementById('activation-overlay').style.display = 'none';
-        showToast("💎 ĐÃ KÍCH HOẠT V1.1.9.3!");
-    } else {
-        alert("Sai Key kích hoạt!");
+        closeModal('activation-overlay');
+        showToast("💎 ĐÃ KÍCH HOẠT V1.1.9.4!");
+    } else { alert("Sai Key!"); }
+}
+
+function showToast(msg, type = "", persistent = false) {
+    const t = document.createElement('div');
+    t.className = `toast show ${type}`;
+    t.innerText = msg;
+    document.body.appendChild(t);
+    if (!persistent) {
+        setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 500); }, 3000);
     }
-}
-
-function playBeep() {
-    new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3').play().catch(() => {});
-}
-
-function playDuplicateSound() {
-    new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play().catch(() => {});
-}
-
-function filterRemoteData() {
-    const val = document.getElementById('remote-search-input').value.toLowerCase();
-    isRemoteListVisible = true;
-    displayRemoteData(remoteDataCache.filter(it => it.orderId.toLowerCase().includes(val)));
+    return t;
 }
 
 async function refreshCameraList() {
-    // Logic này giữ nguyên từ bản cũ
+    const body = document.getElementById('cam-list-render');
+    if (!body) return;
+    try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+            let html = '<div class="settings-group"><label class="settings-label">Chọn Camera:</label><select id="cam-select-inner" class="settings-select" onchange="localStorage.setItem(\'nvh_scanner_cam_id\', this.value)">';
+            const current = localStorage.getItem('nvh_scanner_cam_id');
+            devices.forEach(d => {
+                html += `<option value="${d.id}" ${current===d.id?'selected':''}>${d.label}</option>`;
+            });
+            html += '</select></div>';
+            body.innerHTML = html;
+        } else { body.innerHTML = "Không tìm thấy camera"; }
+    } catch (e) { body.innerHTML = "Lỗi truy cập camera"; }
 }

@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TCT Scanner Pro V1.1.9.3 Cloud | Diamond Edition</title>
-    <link rel="stylesheet" href="style.css?v=1.1.9.3">
+    <title>TCT Scanner Pro V1.1.9.4 Cloud | Diamond Edition</title>
+    <link rel="stylesheet" href="style.css?v=1.1.9.4">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2D0B2D">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,7 +17,6 @@
     
     <!-- Scanner Libs -->
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
     <div class="app-container" id="app-container">
@@ -29,7 +28,6 @@
             <button class="tab-btn active" id="btn-tab-scan" onclick="switchTab('scan')">QUÉT MÃ</button>
             <button class="tab-btn" id="btn-tab-history" onclick="switchTab('history')">LỊCH SỬ</button>
             <button class="tab-btn" id="btn-tab-data" onclick="switchTab('data')">DỮ LIỆU</button>
-            <button class="tab-btn" id="btn-tab-review" onclick="switchTab('review')">XEM LẠI</button>
         </nav>
 
         <main class="tab-content">
@@ -65,7 +63,7 @@
             <section id="history-view" class="view">
                 <div class="search-box">
                     <input type="text" id="search-input" placeholder="Tìm trong máy..." onkeyup="filterHistory()">
-                    <button class="search-scan-btn" onclick="startSearchScan('history')">📷</button>
+                    <button class="search-scan-btn">📷</button>
                 </div>
                 <div class="history-header">
                     <h3>Lịch sử tại máy</h3>
@@ -78,7 +76,7 @@
             <section id="data-view" class="view">
                 <div class="search-box">
                     <input type="text" id="remote-search-input" placeholder="Tìm trên CLOUD..." onkeyup="filterRemoteData()">
-                    <button class="search-scan-btn" onclick="startSearchScan('data')">📷</button>
+                    <button class="search-scan-btn">📷</button>
                 </div>
                 <div class="history-header" style="margin-bottom:10px;">
                     <h3 id="cloud-status">Dữ liệu Hệ thống</h3>
@@ -99,18 +97,10 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Review View -->
-            <section id="review-view" class="view">
-                <div style="text-align:center; padding:50px; color:var(--gray-text);">
-                    <p>☁️ Tính năng xem lại video Cloud</p>
-                    <p style="font-size:0.75rem;">Đang được tối ưu hóa cho Firebase...</p>
-                </div>
-            </section>
         </main>
 
         <footer class="footer">
-            <span>Thực hiện bởi <i>NVH</i> — V1.1.9.2 Cloud Era</span>
+            <span>Thực hiện bởi <i>NVH</i> — V1.1.9.4 Cloud Era</span>
         </footer>
     </div>
 
@@ -125,51 +115,64 @@
     </div>
 
     <!-- Sidebar Drawer -->
-    <div id="drawer-overlay" class="modal-overlay" onclick="toggleDrawer(false)" style="background:rgba(0,0,0,0.5);"></div>
+    <div id="drawer-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; z-index:11500;" onclick="toggleDrawer(false)"></div>
     <div id="side-drawer" class="side-drawer">
         <div class="drawer-header">
-            <h3>DANH MỤC CÀI ĐẶT</h3>
+            <h3>CÀI ĐẶT & HỆ THỐNG</h3>
             <button class="close-drawer" onclick="toggleDrawer(false)">×</button>
         </div>
         <div class="drawer-content">
             <div class="menu-group-list">
                 <div class="menu-group-item" onclick="openSettings('scan')">
                     <span class="icon">🎯</span>
-                    <div class="text">
-                        <span class="title">Thiết lập Quét</span>
-                        <span class="desc">Âm thanh & Rung</span>
-                    </div>
+                    <div class="text"><span class="title">Thiết lập Quét</span><span class="desc">Âm thanh & Rung</span></div>
                 </div>
                 <div class="menu-group-item" onclick="openSettings('cloud')">
                     <span class="icon">☁️</span>
-                    <div class="text">
-                        <span class="title">Cấu hình Cloud</span>
-                        <span class="desc">Kết nối Firebase của bạn</span>
-                    </div>
+                    <div class="text"><span class="title">Cấu hình Cloud</span><span class="desc">Kết nối Firebase</span></div>
                 </div>
                 <div class="menu-group-item" onclick="openSettings('camera')">
                     <span class="icon">📷</span>
-                    <div class="text">
-                        <span class="title">Camera</span>
-                        <span class="desc">Chọn thiết bị quét</span>
-                    </div>
+                    <div class="text"><span class="title">Camera</span><span class="desc">Chọn thiết bị quét</span></div>
+                </div>
+                <!-- V1.1.9.4 New Items -->
+                <div class="menu-group-item" onclick="openSettings('audio')">
+                    <span class="icon">🔊</span>
+                    <div class="text"><span class="title">Âm thanh</span><span class="desc">Chọn loại tiếng bíp</span></div>
+                </div>
+                <div class="menu-group-item" onclick="openSettings('user')">
+                    <span class="icon">👤</span>
+                    <div class="text"><span class="title">Người dùng</span><span class="desc">Thông tin nhân viên</span></div>
+                </div>
+                <div class="menu-group-item" onclick="openSettings('display')">
+                    <span class="icon">🎨</span>
+                    <div class="text"><span class="title">Hiển thị</span><span class="desc">Giao diện & Cỡ chữ</span></div>
                 </div>
                 <div class="menu-group-item" onclick="openChangelog()">
                     <span class="icon">📜</span>
-                    <div class="text">
-                        <span class="title">Nhật ký phiên bản</span>
-                        <span class="desc">Các thay đổi gần đây</span>
-                    </div>
+                    <div class="text"><span class="title">Nhật ký phiên bản</span><span class="desc">Các thay đổi gần đây</span></div>
                 </div>
             </div>
         </div>
         <div class="drawer-footer">
-            <p style="font-size:0.7rem; color:var(--gray-text); text-align:center;">V1.1.9.3 Diamond Cloud</p>
+            <p style="font-size:0.7rem; color:var(--gray-text); text-align:center;">V1.1.9.4 Diamond Cloud</p>
+        </div>
+    </div>
+
+    <!-- Unified Settings Modal (Restored & Upgraded) -->
+    <div id="settings-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:15000; backdrop-filter:blur(5px);">
+        <div class="modal-content">
+            <div class="drawer-header" style="padding:0 0 15px 0;">
+                <h3 id="settings-title">CÀI ĐẶT</h3>
+                <button onclick="closeModal('settings-modal')" style="background:none; border:none; color:white; font-size:1.5rem;">×</button>
+            </div>
+            <div id="settings-body" style="text-align:left;"></div>
+            <button class="pc-action-btn" onclick="saveSettings()" style="margin-top:20px;">LƯU CÀI ĐẶT</button>
         </div>
     </div>
 
     <!-- Duplicate Choice Modal -->
-    <div id="duplicate-modal" class="modal-overlay">
+    <div id="duplicate-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:15000; backdrop-filter:blur(5px);">
         <div class="modal-content">
             <h2 style="color:var(--danger);">PHÁT HIỆN TRÙNG LẬP!</h2>
             <p style="margin: 15px 0;">Mã <b id="dup-code-text" style="color:var(--primary-color);"></b> đã tồn tại trên hệ thống.</p>
@@ -181,20 +184,29 @@
         </div>
     </div>
 
+    <!-- Order Detail Modal (Restored) -->
+    <div id="detail-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:15000; backdrop-filter:blur(5px);">
+        <div class="modal-content">
+            <h2 style="color:var(--primary-color);">CHI TIẾT ĐƠN HÀNG</h2>
+            <div id="order-detail-content" class="detail-info"></div>
+            <button class="pc-action-btn" onclick="closeModal('detail-modal')" style="margin-top:20px;">ĐÓNG</button>
+        </div>
+    </div>
+
     <!-- Changelog Modal -->
-    <div id="changelog-modal" class="modal-overlay">
+    <div id="changelog-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; justify-content:center; align-items:center; z-index:15000; backdrop-filter:blur(5px);">
         <div class="modal-content" style="text-align:left;">
             <h2 style="color:var(--primary-color); text-align:center;">NHẬT KÝ PHIÊN BẢN</h2>
-            <div style="margin-top:20px; font-size:0.85rem; line-height:1.6;">
-                <p><b>V1.1.9.3 (Hiện tại):</b><br>- Phóng đại nút Quét gấp đôi.<br>- Fix triệt để Sidebar z-index.<br>- Đại tu Tab Dữ liệu chuyên sâu.<br>- Thêm cơ chế ẩn popup khi cập nhật xong.</p>
-                <p style="margin-top:10px;"><b>V1.1.9.2:</b><br>- Sửa lỗi Sidebar mờ.<br>- Password mới 310824.<br>- Xử lý trùng lập A(2).<p>
-                <p style="margin-top:10px;"><b>V1.1.9.1:</b><br>- Mở rộng vùng quét Full-frame.<br>- Fix lỗi Camera không tải.</p>
-                <p style="margin-top:10px;"><b>V1.1.9.0:</b><br>- Chuyển sang Cloud Firebase Realtime.</p>
+            <div style="margin-top:20px; font-size:0.8rem; line-height:1.6; max-height:50vh; overflow-y:auto;">
+                <p><b>V1.1.9.4 (Mới):</b><br>- Nút Quét to Siêu Cực Đại.<br>- Hệ thống Cài đặt đa năng (Âm thanh, User, Theme).<br>- Xóa Tab Xem lại.<br>- Fix lỗi mất bảng Chi tiết.</p>
+                <p style="margin-top:10px;"><b>V1.1.9.3:</b><br>- Phóng đại UI, Tab Dữ liệu chuyên sâu.</p>
+                <p style="margin-top:10px;"><b>V1.1.9.2:</b><br>- Password mới 310824, Xử lý trùng A(2).</p>
+                <p style="margin-top:10px;"><b>V1.1.9.0-1:</b><br>- Cloud Firebase Realtime, Full-frame scan.</p>
             </div>
             <button class="pc-action-btn" onclick="closeModal('changelog-modal')" style="margin-top:20px;">ĐÓNG</button>
         </div>
     </div>
 
-    <script src="app.js?v=1.1.9.3"></script>
+    <script src="app.js?v=1.1.9.4"></script>
 </body>
 </html>
