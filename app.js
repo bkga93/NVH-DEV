@@ -1,5 +1,5 @@
 // ==========================================
-// TCT SCANNER PRO V1.2.1.0 - CLOUD ERA
+// TCT SCANNER PRO V1.2.2.0 - CLOUD ERA
 // PHIÊN BẢN DIAMOND CLOUD (FIREBASE)
 // ==========================================
 
