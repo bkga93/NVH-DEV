@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TCT Scanner Pro V1.1.9.2 Cloud | Diamond Edition</title>
-    <link rel="stylesheet" href="style.css?v=1.1.9.2">
+    <title>TCT Scanner Pro V1.1.9.3 Cloud | Diamond Edition</title>
+    <link rel="stylesheet" href="style.css?v=1.1.9.3">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2D0B2D">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -80,16 +80,19 @@
                     <input type="text" id="remote-search-input" placeholder="Tìm trên CLOUD..." onkeyup="filterRemoteData()">
                     <button class="search-scan-btn" onclick="startSearchScan('data')">📷</button>
                 </div>
-                <div class="history-header">
+                <div class="history-header" style="margin-bottom:10px;">
                     <h3 id="cloud-status">Dữ liệu Hệ thống</h3>
-                    <div style="display:flex; gap:10px;">
-                        <button class="refresh-btn" onclick="showAllRemoteData()">📊 TẤT CẢ</button>
-                        <button class="refresh-btn" onclick="refreshCloudData()">🔄 CẬP NHẬT</button>
-                    </div>
                 </div>
-                <div id="cloud-sync-info" style="font-size:0.6rem; color:var(--gray-text); margin-bottom:10px; display:none;">
-                    Cập nhật lúc: <span id="last-update-time">-</span> | Tổng số: <span id="total-count">0</span> đơn
+                
+                <div class="data-header-actions">
+                    <button id="btn-show-all" class="btn-data-action" onclick="showAllRemoteData()">📊 TẤT CẢ (0)</button>
+                    <button id="btn-refresh-cloud" class="btn-data-action" onclick="refreshCloudData()">🔄 CẬP NHẬT</button>
                 </div>
+                
+                <div id="update-status-line" class="update-status-line">
+                    Sẵn sàng
+                </div>
+
                 <div id="remote-data-list" class="history-list">
                     <div class="empty-msg" style="text-align:center; padding:40px; color:var(--gray-text);">
                         <p>Nhấn "📊 TẤT CẢ" để xem danh sách đơn</p>
@@ -151,10 +154,17 @@
                         <span class="desc">Chọn thiết bị quét</span>
                     </div>
                 </div>
+                <div class="menu-group-item" onclick="openChangelog()">
+                    <span class="icon">📜</span>
+                    <div class="text">
+                        <span class="title">Nhật ký phiên bản</span>
+                        <span class="desc">Các thay đổi gần đây</span>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="drawer-footer">
-            <p style="font-size:0.7rem; color:var(--gray-text); text-align:center;">V1.1.9.2 Diamond Cloud</p>
+            <p style="font-size:0.7rem; color:var(--gray-text); text-align:center;">V1.1.9.3 Diamond Cloud</p>
         </div>
     </div>
 
@@ -171,15 +181,20 @@
         </div>
     </div>
 
-    <!-- Order Detail Modal -->
-    <div id="detail-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h2 style="color:var(--primary-color);">CHI TIẾT ĐƠN HÀNG</h2>
-            <div id="order-detail-content" class="detail-info"></div>
-            <button class="pc-action-btn" onclick="closeModal('detail-modal')" style="margin-top:20px;">ĐÓNG</button>
+    <!-- Changelog Modal -->
+    <div id="changelog-modal" class="modal-overlay">
+        <div class="modal-content" style="text-align:left;">
+            <h2 style="color:var(--primary-color); text-align:center;">NHẬT KÝ PHIÊN BẢN</h2>
+            <div style="margin-top:20px; font-size:0.85rem; line-height:1.6;">
+                <p><b>V1.1.9.3 (Hiện tại):</b><br>- Phóng đại nút Quét gấp đôi.<br>- Fix triệt để Sidebar z-index.<br>- Đại tu Tab Dữ liệu chuyên sâu.<br>- Thêm cơ chế ẩn popup khi cập nhật xong.</p>
+                <p style="margin-top:10px;"><b>V1.1.9.2:</b><br>- Sửa lỗi Sidebar mờ.<br>- Password mới 310824.<br>- Xử lý trùng lập A(2).<p>
+                <p style="margin-top:10px;"><b>V1.1.9.1:</b><br>- Mở rộng vùng quét Full-frame.<br>- Fix lỗi Camera không tải.</p>
+                <p style="margin-top:10px;"><b>V1.1.9.0:</b><br>- Chuyển sang Cloud Firebase Realtime.</p>
+            </div>
+            <button class="pc-action-btn" onclick="closeModal('changelog-modal')" style="margin-top:20px;">ĐÓNG</button>
         </div>
     </div>
 
-    <script src="app.js?v=1.1.9.2"></script>
+    <script src="app.js?v=1.1.9.3"></script>
 </body>
 </html>

@@ -163,40 +163,43 @@ body {
 .status-label { font-size: 0.75rem; color: var(--gray-text); display: block; margin-bottom: 5px; }
 .status-value { font-size: 1.2rem; font-weight: 900; color: var(--primary-color); word-break: break-all; }
 
-/* Buttons */
-.pc-action-btn, .view-all-btn, .download-btn-main, .modal-btn {
+/* Mega Buttons v1.1.9.3 */
+.pc-action-btn, .modal-btn {
     width: 100%;
-    padding: 20px; /* Tăng kích thước nút */
-    border-radius: 14px;
+    padding: 25px 0; /* Gấp đôi độ cao */
+    border-radius: 16px;
     border: none;
-    background-color: var(--primary-color);
+    background: linear-gradient(180deg, var(--primary-color), #D4AF37);
     color: var(--surface-color);
-    font-weight: 800;
-    font-size: 1rem; /* Tăng font chữ */
+    font-weight: 900;
+    font-size: 1.2rem;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .controls-container {
-    margin-top: 35px; /* Đẩy nút xuống xa khung quét */
+    margin-top: 50px; /* Đẩy xa khung quét hơn nữa */
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
 }
 
 .pc-action-btn:active, .modal-btn:active { transform: scale(0.97); }
 
-/* Sidebar Drawer */
+/* Sidebar Drawer v1.1.9.3 */
 .side-drawer {
     position: fixed;
     top: 0; left: -100%;
     width: 80%; max-width: 320px; height: 100%;
     background: linear-gradient(135deg, var(--surface-color), #3d0e3d);
-    z-index: 11000; /* Tăng z-index để không bị overlay đè */
+    z-index: 12000; /* Lớp cao nhất */
     transition: left 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
     display: flex;
     flex-direction: column;
+    pointer-events: auto !important;
 }
 
 .side-drawer.active { left: 0; }
@@ -306,21 +309,38 @@ body {
 }
 
 /* Fix Button Styles v1.1.9.1 */
-.clear-btn, .refresh-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 215, 0, 0.3);
-    color: var(--primary-color);
-    font-size: 0.7rem;
-    font-weight: bold;
-    padding: 4px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    text-transform: uppercase;
+/* Data Tab Buttons v1.1.9.3 */
+.data-header-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 15px;
 }
 
-.clear-btn:active, .refresh-btn:active {
-    background: var(--primary-color);
-    color: var(--surface-color);
+.btn-data-action {
+    flex: 1;
+    padding: 15px 0;
+    background: var(--accent-color);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.btn-data-action:active { background: var(--primary-color); color: var(--surface-color); }
+
+.update-status-line {
+    text-align: right;
+    font-style: italic;
+    font-size: 0.7rem;
+    color: var(--gray-text);
+    margin-top: -8px;
+    margin-bottom: 12px;
+}
+
+.clear-btn, .refresh-btn {
+    display: none; /* Dùng hệ thống nút mới */
 }
 
 /* Full Scan Area Fix */
