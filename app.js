@@ -1,5 +1,5 @@
 // ==========================================
-// TCT SCANNER PRO V1.1.9.9 - CLOUD ERA
+// TCT SCANNER PRO V1.2.0.0 - CLOUD ERA
 // PHIÊN BẢN DIAMOND CLOUD (FIREBASE)
 // ==========================================
 
@@ -53,7 +53,7 @@ const BEEP_NAMES = {
 
 // --- KHỞI TẠO APP ---
 window.onload = async () => {
-    console.log("🚀 TCT APP V1.1.9.9 - CLOUD ERA IS LIVE!");
+    console.log("🚀 TCT APP V1.2.0.0 - CLOUD ERA IS LIVE!");
     applyTheme(settings.theme);
     applyFontSize(settings.fontSize);
     checkActivation();
@@ -136,7 +136,6 @@ function runManualCleanup() {
     
     if (confirm(`🧹 Bác có chắc chắn muốn xóa tất cả đơn hàng cũ hơn ${days} ngày không?`)) {
         const toast = showToast(`⏳ Đang tìm và xóa đơn cũ (> ${days} ngày)...`, "info", true);
-        
         const updates = {};
         remoteDataCache.forEach(item => {
             const itemDate = parseTime(item.time);
@@ -223,10 +222,25 @@ function onScanSuccess(decodedText) {
     }
 }
 
+// --- GIỌNG NÓI CHUẨN VIỆT (V1.2.0.0 FIX) ---
 function speakSuccess() {
+    if (!window.speechSynthesis) return;
     const msg = new SpeechSynthesisUtterance("Đã quét thành công");
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Tìm giọng nói tiếng Việt (vi-VN)
+    const viVoice = voices.find(v => v.lang.startsWith('vi') || v.lang.includes('VN'));
+    
+    if (viVoice) {
+        msg.voice = viVoice;
+    }
+    
     msg.lang = 'vi-VN';
-    msg.rate = 1.2;
+    msg.rate = 1.0; 
+    msg.pitch = 1.0;
+    
+    // Hủy bỏ các yêu cầu nói trước đó để tránh dồn ứ
+    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(msg);
 }
 
@@ -335,7 +349,7 @@ function updateScannerUI() {
     b.style.background = isScanning ? "var(--danger)" : "";
 }
 
-// --- SETTINGS v1.1.9.9 ---
+// --- SETTINGS v1.2.0.0 ---
 let currentGroup = '';
 function openSettings(g) {
     if (g === 'database' && prompt("🔐 Mật khẩu Quản trị:") !== '310824') return;
