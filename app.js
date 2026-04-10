@@ -292,12 +292,16 @@ async function initOCR() {
 
 async function runAIScan() {
     if (!isScanning) {
-        showToast("⚠️ Vui lòng BẬT CAMERA trước!", "warning");
+        showToast("⏳ Đang khởi động Camera...", "info");
+        await toggleScanner();
         return;
     }
 
     const video = document.querySelector('#reader video');
-    if (!video) return;
+    if (!video) {
+        showToast("⚠️ Không tìm thấy luồng Camera!", "warning");
+        return;
+    }
 
     openModal('ai-modal');
     document.getElementById('ai-loading').style.display = 'block';
@@ -382,13 +386,31 @@ async function saveAIScan() {
 
     if (!database) return;
     try {
+        // 1. Lưu vào Lịch sử máy (Offline) trước
+        const localItem = { 
+            id: Date.now(), 
+            content: `[AI] ${trackingId}`, 
+            time: aiData.time,
+            type: 'AI_OCR',
+            ...aiData
+        };
+        localHistory.unshift(localItem);
+        localStorage.setItem('nvh_scan_history', JSON.stringify(localHistory.slice(0, 50)));
+        renderLocalHistory();
+
+        // 2. Đẩy lên Cloud
         await database.ref('scans/' + trackingId).set(aiData);
-        showToast("✅ Đã lưu AI thành công!");
+        
+        // 3. Cập nhật UI Lab
+        const labStatus = document.getElementById('lab-last-ai-result');
+        if (labStatus) labStatus.innerHTML = `✅ Đã lưu: ${trackingId}<br>💰 ${aiData.cod} VND`;
+
+        showToast("✅ Đã lưu Offline & Cloud thành công!");
         closeModal('ai-modal');
         playBeep();
         if (settings.voiceEnabled) speakSuccess();
     } catch (e) {
-        showToast("❌ Lỗi lưu Cloud");
+        showToast("❌ Lỗi lưu dữ liệu");
     }
 }
 

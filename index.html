@@ -30,6 +30,7 @@
             <button class="tab-btn active" id="btn-tab-scan" onclick="switchTab('scan')">QUÉT MÃ</button>
             <button class="tab-btn" id="btn-tab-history" onclick="switchTab('history')">LỊCH SỬ</button>
             <button class="tab-btn" id="btn-tab-data" onclick="switchTab('data')">DỮ LIỆU</button>
+            <button class="tab-btn" id="btn-tab-lab" onclick="switchTab('lab')" style="color:var(--success);">PHÒNG LAB 🧪</button>
         </nav>
 
         <main class="tab-content">
@@ -52,16 +53,33 @@
 
                 <div class="controls-container">
                     <button id="start-btn" class="pc-action-btn" onclick="toggleScanner()">
-                        <span class="btn-main-text">🚀 BẮT ĐẦU QUÉT QR/BAR</span>
-                    </button>
-                    <!-- V1.2.2.5 AI OCR Button -->
-                    <button id="ai-scan-btn" class="ai-action-btn" onclick="runAIScan()">
-                        <span class="btn-main-text">🧠 CHỤP & PHÂN TÍCH AI</span>
+                        <span class="btn-main-text">🚀 BẮT ĐẦU QUÉT</span>
                     </button>
                     <div class="pc-status-card">
                         <span class="status-label">Mã vừa quét:</span>
                         <div id="pc-last-scanned" class="status-value">Đang chờ...</div>
                     </div>
+                </div>
+            </section>
+
+            <!-- Lab View (Experimental AI OCR) -->
+            <section id="lab-view" class="view">
+                <div class="lab-intro">
+                    <h3 style="color:var(--success);">🧪 PHÒNG THÍ NGHIỆM AI</h3>
+                    <p style="font-size:0.75rem; color:var(--gray-text); margin-bottom:15px;">Thử nghiệm tính năng bóc tách thông tin từ ảnh chụp nhãn đơn.</p>
+                </div>
+                
+                <div class="controls-container">
+                    <!-- V1.2.2.6 Auto-Camera Logic AI Button -->
+                    <button id="ai-scan-btn" class="ai-action-btn" onclick="runAIScan()">
+                        <span class="btn-main-text">🧠 CHỤP & PHÂN TÍCH AI</span>
+                    </button>
+                    <p style="text-align:center; font-size:0.7rem; color:var(--gray-text);">(Nhấn lần 1 để bật Camera, lần 2 để Chụp & Phân tích)</p>
+                </div>
+
+                <div class="pc-status-card" style="margin-top:20px;">
+                    <span class="status-label">Kết quả AI gần nhất:</span>
+                    <div id="lab-last-ai-result" class="status-value" style="font-size:0.9rem;">...</div>
                 </div>
             </section>
 
