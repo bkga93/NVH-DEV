@@ -713,7 +713,20 @@ async function fetchDataFromSheets(isAuto = false) {
             body: JSON.stringify({ action: "getData" }),
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
-        let rawJson = await response.json();
+        let rawJson = null;
+        try {
+            rawJson = await response.json();
+            // Ghi dữ liệu thô vào khung Debug để chẩn đoán (v1.1.8.3)
+            const debugEl = document.getElementById('debug-raw-output');
+            if (debugEl) debugEl.value = JSON.stringify(rawJson, null, 2);
+            console.log("🔍 DEBUG - RAW DATA RECEIVED:", rawJson);
+        } catch (jsonErr) {
+            console.error("❌ JSON Parse Error:", jsonErr);
+            const text = await response.text();
+            const debugEl = document.getElementById('debug-raw-output');
+            if (debugEl) debugEl.value = "LỖI PHẢN HỒI (KHÔNG PHẢI JSON):\n" + text;
+            throw new Error("Dữ liệu từ Google không đúng định dạng JSON.");
+        }
         
         // --- XỬ LÝ ĐA DẠNG CẤU TRÚC PHẢN HỒI (GAS) ---
         let data = [];
@@ -721,26 +734,23 @@ async function fetchDataFromSheets(isAuto = false) {
             data = rawJson;
         } else if (rawJson && rawJson.data && Array.isArray(rawJson.data)) {
             data = rawJson.data;
-        } else if (rawJson && rawJson.rows && Array.isArray(rawJson.rows)) {
-            data = rawJson.rows;
+        } else if (rawJson && (rawJson.rows || rawJson.values)) {
+            data = rawJson.rows || rawJson.values;
         }
 
-        if (data.length > 0) {
-            // Chuẩn hóa dữ liệu v1.1.8.2 (FIXED COLUMNS - Cố định A=Time, C=Code)
+        if (data && data.length > 0) {
+            // Chuẩn hóa dữ liệu v1.1.8.3 (FIXED COLUMNS - A=Time, C=Code)
             data = data.map((row, rowIndex) => {
                 let normalized = { userName: 'Log', content: 'N/A', scanTime: 'N/A', rowIndex: rowIndex + 1 };
                 
                 if (Array.isArray(row)) {
-                    // Cột A (0) = Thời gian
                     normalized.scanTime = row[0] || 'N/A';
-                    // Cột B (1) = Tên người dùng (Dự phòng)
+                    normalized.content = row[2] || row[1] || 'N/A'; // Thử cả cột C và B
                     normalized.userName = row[1] || 'NoName';
-                    // Cột C (2) = Mã đơn
-                    normalized.content = row[2] || 'N/A';
                 } else if (typeof row === 'object') {
-                    normalized.userName = row.userName || row.B || 'NoName';
-                    normalized.content = row.content || row.C || 'N/A';
-                    normalized.scanTime = row.scanTime || row.A || 'N/A';
+                    normalized.scanTime = row.scanTime || row.A || row.time || 'N/A';
+                    normalized.content = row.content || row.C || row.code || 'N/A';
+                    normalized.userName = row.userName || row.B || row.name || 'NoName';
                 }
                 return normalized;
             });
@@ -748,16 +758,15 @@ async function fetchDataFromSheets(isAuto = false) {
             // TÁCH header và LỌC bỏ dòng trống
             data = data.filter(item => {
                 const timeStr = (item.scanTime || "").toString().toLowerCase();
-                if (timeStr.includes("thời gian") || timeStr.includes("time")) return false; // Bỏ qua header
-                return item.content !== 'N/A';
+                const contentStr = (item.content || "").toString().toLowerCase();
+                if (timeStr.includes("thời gian") || timeStr.includes("time") || contentStr.includes("mã đơn")) return false; 
+                return item.content !== 'N/A' || item.scanTime !== 'N/A';
             });
-
-            // Sắp xếp lại theo thời gian mới nhất lên đầu
+            
+            // Sắp xếp
             data.sort((a, b) => {
                 try {
-                    const timeA = parseDate(a.scanTime).getTime();
-                    const timeB = parseDate(b.scanTime).getTime();
-                    return timeB - timeA;
+                    return parseDate(b.scanTime).getTime() - parseDate(a.scanTime).getTime();
                 } catch(e) { return 0; }
             });
         }
@@ -1177,7 +1186,7 @@ function previewSound(val) {
 }
 
 window.onload = () => {
-    console.log("🚀 TCT APP V1.1.8.2 - FIXED COLUMNS EDITION IS LIVE!");
+    console.log("🚀 TCT APP V1.1.8.3 - DIAGNOSTIC EDITION IS LIVE!");
     // Khởi tạo mặc định
     if (localStorage.getItem('nvh_sound_type') === null) {
         localStorage.setItem('nvh_sound_type', 'standard');
