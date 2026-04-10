@@ -13,6 +13,8 @@ let pendingScanCode = null;
 let isRemoteListVisible = false;
 let lastScanTracker = { code: '', time: 0 }; 
 
+let ocrWorker = null; // Tesseract Worker
+
 const VI_VOICE_FILE = 'Am thanh bao Tieng Viet.mp3'; // File âm thanh thực tế
 
 // --- CÀI ĐẶT NGƯỜI DÙNG ---
@@ -281,6 +283,115 @@ function getNextSuffix(baseId) {
 
 function extractOrderId(text) { return text.split(/[\s,]+/)[0]; }
 
+// --- AI OCR LOGIC v1.2.2.5 ---
+async function initOCR() {
+    if (ocrWorker) return ocrWorker;
+    ocrWorker = await Tesseract.createWorker('vie'); // Hỗ trợ tiếng Việt
+    return ocrWorker;
+}
+
+async function runAIScan() {
+    if (!isScanning) {
+        showToast("⚠️ Vui lòng BẬT CAMERA trước!", "warning");
+        return;
+    }
+
+    const video = document.querySelector('#reader video');
+    if (!video) return;
+
+    openModal('ai-modal');
+    document.getElementById('ai-loading').style.display = 'block';
+    document.getElementById('ai-result-form').style.display = 'none';
+
+    try {
+        // 1. Chụp ảnh từ video
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const imageData = canvas.toDataURL('image/jpeg');
+
+        // 2. Chạy OCR
+        const worker = await initOCR();
+        const { data: { text } } = await worker.recognize(imageData);
+        console.log("AI OCR RAW TEXT:", text);
+
+        // 3. Phân tích dữ liệu
+        const extracted = extractAIShopData(text);
+        
+        // 4. Hiển thị lên form xác nhận
+        document.getElementById('ai-tracking-id').value = extracted.trackingId || "";
+        document.getElementById('ai-order-id').value = extracted.orderId || "";
+        document.getElementById('ai-cod').value = extracted.cod || "";
+        document.getElementById('ai-product').value = extracted.product || "";
+
+        document.getElementById('ai-loading').style.display = 'none';
+        document.getElementById('ai-result-form').style.display = 'block';
+    } catch (e) {
+        console.error("AI Scan Error:", e);
+        showToast("❌ Lỗi AI: " + e.message, "danger");
+        closeModal('ai-modal');
+    }
+}
+
+function extractAIShopData(text) {
+    const data = { trackingId: "", orderId: "", cod: "", product: "" };
+    
+    // Regex cho nhãn Shopee
+    const trackingRegex = /(SPXVN\d+)/i;
+    const orderIdRegex = /(26\d{10,}[A-Z0-9]*)/i; // Shopee Order ID thường bắt đầu bằng 26
+    const codRegex = /([\d,.]+)\s*VND/i;
+    const productKeywords = ["Nội dung hàng", "SL sản phẩm"];
+
+    const trackMatch = text.match(trackingRegex);
+    if (trackMatch) data.trackingId = trackMatch[1];
+
+    const orderMatch = text.match(orderIdRegex);
+    if (orderMatch) data.orderId = orderMatch[1];
+
+    const codMatch = text.match(codRegex);
+    if (codMatch) data.cod = codMatch[1];
+
+    // Trích xuất sản phẩm (lấy 1 dòng sau từ khóa)
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        if (productKeywords.some(k => lines[i].includes(k))) {
+            data.product = (lines[i+1] || "").trim();
+            break;
+        }
+    }
+
+    return data;
+}
+
+async function saveAIScan() {
+    const trackingId = document.getElementById('ai-tracking-id').value.trim();
+    if (!trackingId) {
+        alert("Cần ít nhất Mã vận đơn để lưu!");
+        return;
+    }
+
+    const aiData = {
+        orderId: document.getElementById('ai-order-id').value,
+        cod: document.getElementById('ai-cod').value,
+        product: document.getElementById('ai-product').value,
+        user: settings.userName,
+        time: new Date().toLocaleString('vi-VN'),
+        type: 'AI_OCR'
+    };
+
+    if (!database) return;
+    try {
+        await database.ref('scans/' + trackingId).set(aiData);
+        showToast("✅ Đã lưu AI thành công!");
+        closeModal('ai-modal');
+        playBeep();
+        if (settings.voiceEnabled) speakSuccess();
+    } catch (e) {
+        showToast("❌ Lỗi lưu Cloud");
+    }
+}
+
 // --- UI & TABS ---
 function switchTab(t) {
     document.querySelectorAll('.view, .tab-btn').forEach(el => el.classList.remove('active'));
@@ -321,14 +432,32 @@ function displayRemoteData(data) {
         const d = document.createElement('div');
         d.className = 'history-item';
         d.onclick = () => showOrderDetails(it);
-        d.innerHTML = `<div class="history-item-header"><span>${it.time}</span><span>👤 ${it.user}</span></div><div class="history-item-content">${it.orderId}</div>`;
+        const subInfo = it.cod ? `<div style="color:var(--success); font-size:0.8rem;">💰 ${it.cod} VND</div>` : "";
+        d.innerHTML = `<div class="history-item-header"><span>${it.time}</span><span>👤 ${it.user}</span></div>
+                       <div class="history-item-content">${it.orderId || it.trackingId || it.content}</div>
+                       ${subInfo}`;
         l.appendChild(d);
     });
 }
 
 function showOrderDetails(it) {
     const b = document.getElementById('order-detail-content');
-    b.innerHTML = `<div class="detail-row"><span class="detail-label">MÃ ĐƠN:</span><span class="detail-value">${it.orderId}</span></div><div class="detail-row"><span class="detail-label">GIỜ QUÉT:</span><span class="highlight-time">${it.time}</span></div><div class="detail-row"><span class="detail-label">NGƯỜI QUÉT:</span><span class="detail-value">${it.user}</span></div>`;
+    let detailHtml = `<div class="detail-row"><span class="detail-label">MÃ VẬN ĐƠN/ID:</span><span class="detail-value">${it.orderId || it.content}</span></div>`;
+    
+    if (it.type === 'AI_OCR') {
+        detailHtml += `
+            <div class="detail-row"><span class="detail-label">MÃ ĐƠN HÀNG:</span><span class="detail-value">${it.orderId}</span></div>
+            <div class="detail-row"><span class="detail-label">TIỀN THU (COD):</span><span class="detail-value" style="color:var(--success)">${it.cod} VND</span></div>
+            <div class="detail-row"><span class="detail-label">SẢN PHẨM:</span><span class="detail-value">${it.product}</span></div>
+        `;
+    }
+
+    detailHtml += `
+        <div class="detail-row"><span class="detail-label">GIỜ QUÉT:</span><span class="highlight-time">${it.time}</span></div>
+        <div class="detail-row"><span class="detail-label">NGƯỜI QUÉT:</span><span class="detail-value">${it.user}</span></div>
+    `;
+    
+    b.innerHTML = detailHtml;
     openModal('detail-modal');
 }
 

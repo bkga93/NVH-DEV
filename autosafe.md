@@ -4,7 +4,7 @@
 
 ### [1. BỐI CẢNH LÀM VIỆC - CONTEXT]
 ```json
-{"project_status":"Hoàn thành V1.2.2.4","current_goal":"Hỗ trợ bác tiếp theo các tính năng khác","core_logic_rules":"Đã gỡ bỏ yêu cầu mật khẩu khởi động. Duy trì bảo mật admin cho Database.","active_variables":{"version":"V1.2.2.4"}}
+{"project_status":"Tích hợp AI OCR V1.2.2.5","current_goal":"Hoàn thiện bóc tách dữ liệu thông minh từ nhãn Shopee","core_logic_rules":"Sử dụng Tesseract.js cho OCR. Regex bóc tách: Mã vận đơn, Mã đơn, Tiền, SP. Yêu cầu xác minh trước khi lưu.","active_variables":{"version":"V1.2.2.5","repo":"NVH-DEV"}}
 ```
 
 ### [2. PHIÊN BẢN - VERSIONS]

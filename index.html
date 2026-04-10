@@ -17,6 +17,8 @@
     
     <!-- Scanner Libs -->
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- OCR Lib -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
     <div class="app-container" id="app-container">
@@ -50,7 +52,11 @@
 
                 <div class="controls-container">
                     <button id="start-btn" class="pc-action-btn" onclick="toggleScanner()">
-                        <span class="btn-main-text">BẮT ĐẦU QUÉT</span>
+                        <span class="btn-main-text">🚀 BẮT ĐẦU QUÉT QR/BAR</span>
+                    </button>
+                    <!-- V1.2.2.5 AI OCR Button -->
+                    <button id="ai-scan-btn" class="ai-action-btn" onclick="runAIScan()">
+                        <span class="btn-main-text">🧠 CHỤP & PHÂN TÍCH AI</span>
                     </button>
                     <div class="pc-status-card">
                         <span class="status-label">Mã vừa quét:</span>
@@ -173,6 +179,39 @@
                 <button class="modal-btn btn-overwrite" onclick="handleDuplicate('overwrite')">GHI ĐÈ DỮ LIỆU</button>
                 <button class="modal-btn btn-keep" onclick="handleDuplicate('keep')">THÊM TIẾP (BẢN SAO)</button>
                 <button class="modal-btn btn-skip" onclick="handleDuplicate('skip')">BỎ QUA</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI OCR Result Modal -->
+    <div id="ai-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); display:none; justify-content:center; align-items:center; z-index:16000; backdrop-filter:blur(10px);">
+        <div class="modal-content ai-modal-content">
+            <h2 style="color:var(--primary-color);">XÁC NHẬN THÔNG TIN AI</h2>
+            <div id="ai-loading" style="display:none; padding:20px;">
+                <div class="loader"></div>
+                <p>Đang phân tích nhãn đơn...</p>
+            </div>
+            <div id="ai-result-form" class="ai-form">
+                <div class="ai-input-group">
+                    <label>Mã vận đơn (Chính):</label>
+                    <input type="text" id="ai-tracking-id" class="settings-input">
+                </div>
+                <div class="ai-input-group">
+                    <label>Mã đơn hàng:</label>
+                    <input type="text" id="ai-order-id" class="settings-input">
+                </div>
+                <div class="ai-input-group">
+                    <label>Tiền thu (VND):</label>
+                    <input type="text" id="ai-cod" class="settings-input">
+                </div>
+                <div class="ai-input-group">
+                    <label>Sản phẩm:</label>
+                    <textarea id="ai-product" class="settings-input" style="height:60px;"></textarea>
+                </div>
+            </div>
+            <div class="ai-actions" style="margin-top:20px; display:flex; gap:10px;">
+                <button class="modal-btn btn-keep" onclick="saveAIScan()" style="flex:2;">💾 LƯU VÀO CLOUD</button>
+                <button class="modal-btn btn-skip" onclick="closeModal('ai-modal')" style="flex:1;">HỦY</button>
             </div>
         </div>
     </div>
