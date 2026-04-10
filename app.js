@@ -16,13 +16,13 @@ let database = null;
 
 // --- CÀI ĐẶT MẶC ĐỊNH ---
 const DEFAULT_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyAsTeR-PlaceHolder-123",
-    authDomain: "tct-scanner.firebaseapp.com",
-    databaseURL: "https://tct-scanner-default-rtdb.firebaseio.com",
-    projectId: "tct-scanner",
-    storageBucket: "tct-scanner.appspot.com",
-    messagingSenderId: "123456",
-    appId: "1:123:web:abc"
+    apiKey: "AIzaSyAN-J63oxR-R415XnjXKt0RUIySQJQAZC0",
+    authDomain: "tct-scanner-pro.firebaseapp.com",
+    databaseURL: "https://tct-scanner-pro-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "tct-scanner-pro",
+    storageBucket: "tct-scanner-pro.firebasestorage.app",
+    messagingSenderId: "486592614773",
+    appId: "1:486592614773:web:bd2861a3dcdf0468ee833c"
 };
 
 // --- KHỞI TẠO APP ---
