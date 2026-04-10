@@ -77,10 +77,13 @@ function formatDate(date) {
 function parseDate(dateStr) {
     if (!dateStr) return new Date(0);
     if (dateStr instanceof Date) return dateStr;
-    if (typeof dateStr !== 'string') return new Date(dateStr);
     
-    // Chuẩn hóa dấu gạch ngang thành gạch chéo
-    const cleanStr = dateStr.replace(/-/g, '/').trim();
+    // Yêu cầu v1.1.7.3: Hỗ trợ Serial Date (46122,33355)
+    let cleanStr = dateStr.toString().trim().replace(/-/g, '/');
+    const serialValue = parseFloat(cleanStr.replace(',', '.'));
+    if (!isNaN(serialValue) && serialValue > 40000 && serialValue < 60000) {
+        return new Date((serialValue - 25569) * 86400 * 1000);
+    }
     
     try {
         const parts = cleanStr.split(/[\s,]+/);
@@ -689,11 +692,17 @@ async function searchRemoteSheets(query) {
 async function fetchDataFromSheets(isAuto = false) {
     const btn = document.querySelector('.download-btn-main');
     if (btn) btn.classList.add('refreshing');
-    if (!isAuto) showToast("Đang tải dữ liệu từ hệ thống...", -1); // -1 để giữ thông báo cho đến khi xong
     
+    if (!isAuto) showToast("Đang xóa bộ nhớ cũ và tải mới từ Sheets...", 3000);
+
     try {
+        // RESET DỮ LIỆU ĐƠN HÀNG (Chỉ xóa nvh_remote_cache) v1.1.7.3
+        remoteDataCache = [];
+        localStorage.removeItem('nvh_remote_cache');
+        
         const response = await fetch(APP_SCRIPT_URL, {
             method: "POST",
+            cache: "no-store",
             body: JSON.stringify({ action: "GET_ALL" }),
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
@@ -1158,7 +1167,7 @@ function previewSound(val) {
 }
 
 window.onload = () => {
-    console.log("🚀 TCT APP V1.1.7.2 - DIAMOND EDITION IS LIVE!");
+    console.log("🚀 TCT APP V1.1.7.3 - DIAMOND EDITION IS LIVE!");
     // Khởi tạo mặc định
     if (localStorage.getItem('nvh_sound_type') === null) {
         localStorage.setItem('nvh_sound_type', 'standard');
@@ -2162,34 +2171,6 @@ function isMobileDevice() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-window.onload = () => {
-    // --- TỰ ĐỘNG KHÔI PHỤC TRẠNG THÁI ---
-    if (localStorage.getItem('nvh_v2.1.0_sync') !== 'done') {
-        // Có thể thêm logic dọn dẹp biến cũ tại đây nếu cần
-        localStorage.setItem('nvh_v2.1.0_sync', 'done');
-    }
-
-    if (localStorage.getItem('nvh_sound_type') === null) {
-        localStorage.setItem('nvh_sound_type', 'standard');
-        localStorage.setItem('nvh_vibrate', 'true');
-    }
-    
-    // Khôi phục PC Mode - v2.0.0
-    let savedPCMode = localStorage.getItem('nvh_pc_mode');
-    if (savedPCMode === null) {
-        pcMode = window.innerWidth > 1024;
-        localStorage.setItem('nvh_pc_mode', pcMode);
-    } else {
-        pcMode = savedPCMode === 'true';
-    }
-
-    togglePCMode(pcMode);
-    initPCResizer(); // Khởi tạo kéo thả
-
-    checkActivation(); // Kiểm tra bản quyền
-    processSyncQueue();
-    fetchDataFromSheets(true); 
-    updateLastUpdateTimeDisplay(localStorage.getItem('nvh_last_update'));
 };
 
 // --- HỆ THỐNG ĐIỀU KHIỂN CAMERA IP (go2rtc & jsQR) v2.2.0 ---

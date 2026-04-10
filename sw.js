@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nvh-scanner-v1172';
+const CACHE_NAME = 'nvh-scanner-v1173';
 const ASSETS = [
   './',
   './index.html',
