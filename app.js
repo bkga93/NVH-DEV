@@ -1,5 +1,5 @@
 // ==========================================
-// TCT SCANNER PRO V1.2.0.0 - CLOUD ERA
+// TCT SCANNER PRO V1.2.1.0 - CLOUD ERA
 // PHIÊN BẢN DIAMOND CLOUD (FIREBASE)
 // ==========================================
 
@@ -13,6 +13,8 @@ let database = null;
 let pendingScanCode = null; 
 let isRemoteListVisible = false;
 let lastScanTracker = { code: '', time: 0 }; 
+
+const VI_VOICE_FILE = 'Am thanh bao Tieng Viet.mp3'; // File âm thanh thực tế
 
 // --- CÀI ĐẶT NGƯỜI DÙNG ---
 const settings = {
@@ -53,7 +55,7 @@ const BEEP_NAMES = {
 
 // --- KHỞI TẠO APP ---
 window.onload = async () => {
-    console.log("🚀 TCT APP V1.2.0.0 - CLOUD ERA IS LIVE!");
+    console.log("🚀 TCT APP V1.2.1.0 - CLOUD ERA IS LIVE!");
     applyTheme(settings.theme);
     applyFontSize(settings.fontSize);
     checkActivation();
@@ -222,26 +224,11 @@ function onScanSuccess(decodedText) {
     }
 }
 
-// --- GIỌNG NÓI CHUẨN VIỆT (V1.2.0.0 FIX) ---
+// --- ÂM BÁO TIẾNG VIỆT (V1.2.1.0 FIX) ---
 function speakSuccess() {
-    if (!window.speechSynthesis) return;
-    const msg = new SpeechSynthesisUtterance("Đã quét thành công");
-    const voices = window.speechSynthesis.getVoices();
-    
-    // Tìm giọng nói tiếng Việt (vi-VN)
-    const viVoice = voices.find(v => v.lang.startsWith('vi') || v.lang.includes('VN'));
-    
-    if (viVoice) {
-        msg.voice = viVoice;
-    }
-    
-    msg.lang = 'vi-VN';
-    msg.rate = 1.0; 
-    msg.pitch = 1.0;
-    
-    // Hủy bỏ các yêu cầu nói trước đó để tránh dồn ứ
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(msg);
+    // Thay thế TTS bằng tệp MP3 thực tế bác gửi
+    const audio = new Audio(VI_VOICE_FILE);
+    audio.play().catch(e => console.error("Audio Play Error:", e));
 }
 
 function showScanResultOverlay(orderId) {
@@ -349,7 +336,7 @@ function updateScannerUI() {
     b.style.background = isScanning ? "var(--danger)" : "";
 }
 
-// --- SETTINGS v1.2.0.0 ---
+// --- SETTINGS v1.2.1.0 ---
 let currentGroup = '';
 function openSettings(g) {
     if (g === 'database' && prompt("🔐 Mật khẩu Quản trị:") !== '310824') return;
@@ -365,9 +352,9 @@ function openSettings(g) {
             Object.keys(BEEP_SOUNDS).forEach(k => opts += `<option value="${k}" ${settings.beepType===k?'selected':''}>${BEEP_NAMES[k]}</option>`);
             b.innerHTML = `
                 <div class="settings-group"><label class="settings-label">Tiếng bíp siêu thị:</label><select id="set-beep-type" class="settings-select">${opts}</select></div>
-                <div class="toggle-container"><span>Thông báo Giọng nói (VN):</span><label class="switch"><input type="checkbox" id="set-voice" ${settings.voiceEnabled?'checked':''}><span class="slider"></span></label></div>
+                <div class="toggle-container"><span>Âm báo Tiếng Việt (MP3):</span><label class="switch"><input type="checkbox" id="set-voice" ${settings.voiceEnabled?'checked':''}><span class="slider"></span></label></div>
                 <div class="toggle-container"><span>Rung máy:</span><label class="switch"><input type="checkbox" id="set-vibrate" ${settings.vibrate?'checked':''}><span class="slider"></span></label></div>
-                <button class="pc-action-btn" style="margin-top:20px; padding:15px; font-size:1rem;" onclick="testBeep()">📻 THỬ TIẾNG BÍP + NÓI</button>
+                <button class="pc-action-btn" style="margin-top:20px; padding:15px; font-size:1rem;" onclick="testBeep()">📻 THỬ TIẾNG BÍP + ÂM BÁO</button>
             `;
             break;
         case 'user':
