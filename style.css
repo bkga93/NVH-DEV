@@ -245,8 +245,24 @@ body {
 .settings-input, .settings-select {
     width: 100%; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255, 215, 0, 0.2); color: white; outline: none; transition: border 0.3s;
+    -webkit-appearance: none; appearance: none; /* Reset để style ổn định */
 }
-body[data-theme^="light"] .settings-input, body[data-theme^="light"] .settings-select { color: black; background: #EEE; }
+
+/* Fix Pullbox (Option) Colors v1.1.9.5 */
+.settings-select option {
+    background-color: var(--surface-color);
+    color: var(--primary-color);
+    padding: 10px;
+}
+
+body[data-theme^="light"] .settings-input, body[data-theme^="light"] .settings-select { 
+    color: #333 !important; 
+    background: rgba(0,0,0,0.05) !important; 
+}
+body[data-theme^="light"] .settings-select option {
+    background-color: white;
+    color: black;
+}
 
 .settings-input:focus, .settings-select:focus { border-color: var(--primary-color); }
 

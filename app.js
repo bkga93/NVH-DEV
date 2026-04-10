@@ -1,5 +1,5 @@
 // ==========================================
-// TCT SCANNER PRO V1.1.9.4 - CLOUD ERA
+// TCT SCANNER PRO V1.1.9.5 - CLOUD ERA
 // PHIÊN BẢN DIAMOND CLOUD (FIREBASE)
 // ==========================================
 
@@ -30,12 +30,23 @@ const BEEP_SOUNDS = {
     modern: 'https://assets.mixkit.co/active_storage/sfx/438/438-preview.mp3',
     cyber: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
     sharp: 'https://assets.mixkit.co/active_storage/sfx/2569/2569-preview.mp3',
-    gentle: 'https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3'
+    gentle: 'https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3',
+    // V1.1.9.5 Expanded Sounds
+    laser: 'https://assets.mixkit.co/active_storage/sfx/1612/1612-preview.mp3',
+    robot: 'https://assets.mixkit.co/active_storage/sfx/2387/2387-preview.mp3',
+    ting: 'https://assets.mixkit.co/active_storage/sfx/2753/2753-preview.mp3',
+    success: 'https://assets.mixkit.co/active_storage/sfx/2188/2188-preview.mp3',
+    cash: 'https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3',
+    pulse: 'https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3',
+    pop: 'https://assets.mixkit.co/active_storage/sfx/1613/1613-preview.mp3',
+    chime: 'https://assets.mixkit.co/active_storage/sfx/2185/2185-preview.mp3',
+    magic: 'https://assets.mixkit.co/active_storage/sfx/1110/1110-preview.mp3',
+    warning: 'https://assets.mixkit.co/active_storage/sfx/997/997-preview.mp3'
 };
 
 // --- KHỞI TẠO APP ---
 window.onload = async () => {
-    console.log("🚀 TCT APP V1.1.9.4 - CLOUD ERA IS LIVE!");
+    console.log("🚀 TCT APP V1.1.9.5 - CLOUD ERA IS LIVE!");
     applyTheme(settings.theme);
     applyFontSize(settings.fontSize);
     checkActivation();
@@ -239,7 +250,7 @@ function updateScannerUI() {
     btn.style.color = isScanning ? "white" : "var(--surface-color)";
 }
 
-// --- CÀI ĐẶT (SETTINGS) v1.1.9.4 ---
+// --- CÀI ĐẶT (SETTINGS) v1.1.9.5 ---
 let currentSettingsGroup = '';
 function openSettings(group) {
     currentSettingsGroup = group;
@@ -249,27 +260,27 @@ function openSettings(group) {
     
     switch(group) {
         case 'audio':
-            title.innerText = "CÀI ĐẶT ÂM THANH";
+            title.innerText = "KHO ÂM THANH & RUNG";
+            let soundOptions = '';
+            Object.keys(BEEP_SOUNDS).forEach(key => {
+                soundOptions += `<option value="${key}" ${settings.beepType===key?'selected':''}>${key.toUpperCase()}</option>`;
+            });
             body.innerHTML = `
                 <div class="settings-group">
-                    <label class="settings-label">Kiểu tiếng kêu:</label>
+                    <label class="settings-label">Kiểu tiếng bíp (Pullbox):</label>
                     <select id="set-beep-type" class="settings-select">
-                        <option value="default" ${settings.beepType==='default'?'selected':''}>Mặc định</option>
-                        <option value="modern" ${settings.beepType==='modern'?'selected':''}>Hiện đại</option>
-                        <option value="cyber" ${settings.beepType==='cyber'?'selected':''}>Công nghệ</option>
-                        <option value="sharp" ${settings.beepType==='sharp'?'selected':''}>Đanh gọn</option>
-                        <option value="gentle" ${settings.beepType==='gentle'?'selected':''}>Nhẹ nhàng</option>
+                        ${soundOptions}
                     </select>
                 </div>
                 <div class="toggle-container">
                     <span>Rung khi thành công:</span>
                     <label class="switch"><input type="checkbox" id="set-vibrate" ${settings.vibrate?'checked':''}><span class="slider"></span></label>
                 </div>
-                <button class="pc-action-btn" style="margin-top:10px; padding:10px;" onclick="testBeep()">🔊 NGHE THỬ</button>
+                <button class="pc-action-btn" style="margin-top:20px; padding:15px; font-size:1rem;" onclick="testBeep()">🔊 NGHE THỬ</button>
             `;
             break;
         case 'user':
-            title.innerText = "NGƯỜI DÙNG & NHÂN VIÊN";
+            title.innerText = "THÔNG TIN CÁ NHÂN";
             body.innerHTML = `
                 <div class="settings-group">
                     <label class="settings-label">Tên người vận hành:</label>
@@ -281,7 +292,7 @@ function openSettings(group) {
             title.innerText = "GIAO DIỆN & HIỂN THỊ";
             body.innerHTML = `
                 <div class="settings-group">
-                    <label class="settings-label">Chủ đề (Theme):</label>
+                    <label class="settings-label">Bộ màu chủ đề (Theme):</label>
                     <select id="set-theme" class="settings-select">
                         <optgroup label="Của Tối (Dark)">
                             <option value="plum-gold" ${settings.theme==='plum-gold'?'selected':''}>Tím Gold (Gốc)</option>
@@ -299,16 +310,11 @@ function openSettings(group) {
                     </select>
                 </div>
                 <div class="settings-group">
-                    <label class="settings-label">Cỡ chữ (%):</label>
+                    <label class="settings-label">Độ lớn chữ (%):</label>
                     <input type="range" id="set-font-size" min="80" max="150" value="${settings.fontSize}" style="width:100%">
                     <div style="text-align:right; font-size:0.75rem;">${settings.fontSize}%</div>
                 </div>
             `;
-            break;
-        case 'camera':
-            title.innerText = "CÀI ĐẶT CAMERA";
-            body.innerHTML = `<div id="cam-list-render">Đang tải...</div>`;
-            refreshCameraList();
             break;
     }
     
@@ -333,7 +339,7 @@ function saveSettings() {
         applyTheme(settings.theme);
         applyFontSize(settings.fontSize);
     }
-    showToast("💾 Đã lưu cài đặt!");
+    showToast("💾 Lưu thành công!");
     closeModal('settings-modal');
 }
 
@@ -362,7 +368,7 @@ function activateApp() {
     if (document.getElementById('activation-key').value === '310824') {
         localStorage.setItem('nvh_activated', 'true');
         closeModal('activation-overlay');
-        showToast("💎 ĐÃ KÍCH HOẠT V1.1.9.4!");
+        showToast("💎 ĐÃ KÍCH HOẠT V1.1.9.5!");
     } else { alert("Sai Key!"); }
 }
 
@@ -375,21 +381,4 @@ function showToast(msg, type = "", persistent = false) {
         setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 500); }, 3000);
     }
     return t;
-}
-
-async function refreshCameraList() {
-    const body = document.getElementById('cam-list-render');
-    if (!body) return;
-    try {
-        const devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length > 0) {
-            let html = '<div class="settings-group"><label class="settings-label">Chọn Camera:</label><select id="cam-select-inner" class="settings-select" onchange="localStorage.setItem(\'nvh_scanner_cam_id\', this.value)">';
-            const current = localStorage.getItem('nvh_scanner_cam_id');
-            devices.forEach(d => {
-                html += `<option value="${d.id}" ${current===d.id?'selected':''}>${d.label}</option>`;
-            });
-            html += '</select></div>';
-            body.innerHTML = html;
-        } else { body.innerHTML = "Không tìm thấy camera"; }
-    } catch (e) { body.innerHTML = "Lỗi truy cập camera"; }
 }
