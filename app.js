@@ -58,6 +58,11 @@ let sessionTimeout = null;
 // --- BIẾN CỨU NGUY BẢO MẬT v1.8.7 (Anti-Loop Extreme) ---
 window.isVerifiedSession = false; 
 
+let searchScanner = null; // Trình quét cho Modal tìm kiếm
+let remoteDataCache = [];
+let selectedRemoteItem = null;
+let currentPendingScan = null; 
+
 function formatDate(date) {
     if (!(date instanceof Date)) date = new Date(date);
     const d = date.getDate().toString().padStart(2, '0');
@@ -70,17 +75,54 @@ function formatDate(date) {
 }
 
 function parseDate(dateStr) {
-    // DD/MM/YYYY HH:mm:ss -> Date
-    const parts = dateStr.split(' ');
-    if (parts.length < 2) return new Date(0);
-    const dParts = parts[0].split('/');
-    const tParts = parts[1].split(':');
-    return new Date(dParts[2], dParts[1] - 1, dParts[0], tParts[0], tParts[1], tParts[2]);
-}
+    if (!dateStr) return new Date(0);
+    if (dateStr instanceof Date) return dateStr;
+    if (typeof dateStr !== 'string') return new Date(dateStr);
+    
+    // Chuẩn hóa dấu gạch ngang thành gạch chéo
+    const cleanStr = dateStr.replace(/-/g, '/').trim();
+    
+    try {
+        const parts = cleanStr.split(/[\s,]+/);
+        let datePart = '', timePart = '';
+        
+        // Tự động nhận diện đâu là ngày, đâu là giờ (không phụ thuộc thứ tự)
+        parts.forEach(p => {
+            if (p.includes('/')) datePart = p;
+            else if (p.includes(':')) timePart = p;
+        });
 
-let remoteDataCache = [];
-let selectedRemoteItem = null;
-let currentPendingScan = null; 
+        if (datePart && timePart) {
+            const dateBits = datePart.split('/');
+            const timeBits = timePart.split(':');
+            
+            if (dateBits.length === 3) {
+                // Hỗ trợ DD/MM/YYYY hoặc D/M/YYYY
+                const day = parseInt(dateBits[0]);
+                const month = parseInt(dateBits[1]) - 1;
+                const year = parseInt(dateBits[2]);
+                const h = parseInt(timeBits[0] || 0);
+                const m = parseInt(timeBits[1] || 0);
+                const s = parseInt(timeBits[2] || 0);
+                return new Date(year, month, day, h, m, s);
+            }
+        }
+        
+        // Trình duyện xử lý fallback
+        const parsed = new Date(cleanStr);
+        if (!isNaN(parsed.getTime())) return parsed;
+        
+        // Chỉ có ngày
+        if (datePart) {
+            const b = datePart.split('/');
+            if (b.length === 3) return new Date(parseInt(b[2]), parseInt(b[1])-1, parseInt(b[0]));
+        }
+    } catch (e) {
+        console.warn("Lỗi parse ngày tháng:", dateStr, e);
+    }
+    
+    return new Date(0);
+}
 
 // --- Biến cho v1.6.4 (PC Mode & Recording) ---
 let pcMode = false;
@@ -567,7 +609,14 @@ function filterRemoteData(immediate = false) {
     if (!input) return;
     const query = input.value.trim().toLowerCase();
     
-    // Hiển thị kết quả từ cache cục bộ NGAY LẬP TỨC
+    // Yêu cầu v1.1.2: Chỉ tìm kiếm/gợi ý khi từ 3 ký tự trở lên
+    if (query.length > 0 && query.length < 3) {
+        displayRemoteData(); 
+        clearTimeout(searchTimeout);
+        return;
+    }
+
+    // Hiển thị kết quả từ cache cục bộ NGAY LẬP TỨC (Không dùng debounce cho cache)
     displayRemoteData();
 
     clearTimeout(searchTimeout);
@@ -575,8 +624,15 @@ function filterRemoteData(immediate = false) {
 
     // Chỉ tìm trên server nếu từ khóa >= 3 ký tự hoặc yêu cầu ngay
     if (query.length >= 3 || immediate) {
-        searchTimeout = setTimeout(() => searchRemoteSheets(query), immediate ? 0 : 1000);
+        searchTimeout = setTimeout(() => searchRemoteSheets(query), immediate ? 0 : 800);
     }
+}
+
+function showAllRemoteData() {
+    const input = document.getElementById('remote-search-input');
+    if (input) input.value = ""; // Xóa query để hiện tất cả
+    displayRemoteData(remoteDataCache);
+    showToast(`Đang hiển thị toàn bộ ${remoteDataCache.length} đơn hàng`);
 }
 
 async function searchRemoteSheets(query) {
@@ -615,8 +671,10 @@ async function searchRemoteSheets(query) {
 }
 
 async function fetchDataFromSheets(isAuto = false) {
-    const btn = document.querySelector('.refresh-btn-inline');
+    const btn = document.querySelector('.download-btn-main');
     if (btn) btn.classList.add('refreshing');
+    if (!isAuto) showToast("Đang tải dữ liệu từ hệ thống...", -1); // -1 để giữ thông báo cho đến khi xong
+    
     try {
         const response = await fetch(APP_SCRIPT_URL, {
             method: "POST",
@@ -626,23 +684,51 @@ async function fetchDataFromSheets(isAuto = false) {
         let data = await response.json();
         
         if (data && Array.isArray(data)) {
-            // 1. Lọc dữ liệu trong vòng 30 ngày (1 tháng)
+            console.log(`📥 Tổng dữ liệu nhận về từ Sheets: ${data.length} dòng.`);
+            
+            // 0. CHUẨN HÓA DỮ LIỆU (Normalization) v1.1.4
+            // Chuyển mảng 2D (nếu có) sang Object để code có thể đọc được key .scanTime
+            data = data.map(item => {
+                if (Array.isArray(item)) {
+                    // Cột A=0, B=1, C=2, D=3
+                    return {
+                        scanTime: item[0] || '',
+                        orderId: item[1] || '',
+                        content: item[2] || '',
+                        endTime: item[3] || ''
+                    };
+                }
+                // Nếu là Object nhưng thiếu key scanTime (có thể do Apps Script map sai cột)
+                if (item && typeof item === 'object' && !item.scanTime) {
+                    return {
+                        scanTime: item.A || item.time || item.timestamp || '',
+                        orderId: item.B || item.id || item.orderId || '',
+                        content: item.C || item.code || item.content || ''
+                    };
+                }
+                return item;
+            });
+
+            // 1. Lọc dữ liệu trong vòng 30 ngày (1 tháng) theo yêu cầu
             const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-            data = data.filter(item => {
+            const filteredByDate = data.filter(item => {
                 if (!item.scanTime) return false;
                 const itemDate = parseDate(item.scanTime);
                 return itemDate.getTime() >= thirtyDaysAgo;
             });
+            
+            console.log(`📅 Sau khi lọc 30 ngày: ${filteredByDate.length} dòng.`);
 
             // 2. Loại bỏ trùng lặp dựa trên Mã đơn hàng (content) - Giữ bản ghi mới nhất
             const uniqueMap = new Map();
-            data.forEach(item => {
+            filteredByDate.forEach(item => {
                 const existing = uniqueMap.get(item.content);
                 if (!existing || parseDate(item.scanTime) > parseDate(existing.scanTime)) {
                     uniqueMap.set(item.content, item);
                 }
             });
             data = Array.from(uniqueMap.values());
+            console.log(`✨ Sau khi bỏ trùng lặp: ${data.length} dòng.`);
 
             // Sắp xếp lại theo thời gian mới nhất lên đầu
             data.sort((a, b) => parseDate(b.scanTime) - parseDate(a.scanTime));
@@ -656,10 +742,20 @@ async function fetchDataFromSheets(isAuto = false) {
         updateLastUpdateTimeDisplay(now);
         displayRemoteData();
         
-        if (!isAuto) showToast(`Đã tải ${data.length} đơn hàng trong tháng qua!`);
+        if (!isAuto) {
+            hideToast(); // Ẩn thông báo "Đang tải" trước khi hiện kết quả
+            if (data.length > 0) {
+                showToast(`✅ Đã tải ${data.length} đơn hàng trong 30 ngày qua!`, 2000);
+            } else {
+                showToast(`⚠️ Không có đơn hàng nào trong 30 ngày qua.`, 2000);
+            }
+        }
     } catch (error) {
         console.error("Fetch error:", error);
-        if (!isAuto) showToast("Lỗi cập nhật dữ liệu!");
+        if (!isAuto) {
+            hideToast();
+            showToast("❌ Lỗi tải dữ liệu. Vui lòng thử lại!");
+        }
     } finally {
         if (btn) btn.classList.remove('refreshing');
     }
@@ -677,24 +773,43 @@ function displayRemoteData(dataToDisplay = null) {
     const input = document.getElementById('remote-search-input');
     const query = input ? input.value.trim().toLowerCase() : "";
     
-    // Yêu cầu: Chưa gõ thì không hiện danh sách
+    // Yêu cầu v1.1.2: Nếu đang gõ mà chưa đủ 3 ký tự
+    if (query.length > 0 && query.length < 3 && !dataToDisplay) {
+        list.innerHTML = "<p class='empty-msg text-warning'>Vui lòng nhập ít nhất 3 ký tự để bắt đầu gợi ý.</p>";
+        list.style.display = 'block';
+        return;
+    }
+
+    // Nếu có dataToDisplay (như khi bấm Xem tất cả), ưu tiên dùng nó
+    const data = dataToDisplay || (query.length >= 3 ? remoteDataCache.filter(item => 
+        (item.content && item.content.toLowerCase().includes(query)) || 
+        (item.orderId && item.orderId.toLowerCase().includes(query))
+    ) : []);
+
+    // Yêu cầu: Chưa gõ thì không hiện danh sách (trừ khi dùng dataToDisplay trực tiếp)
     if (!query && !dataToDisplay) {
         list.innerHTML = "<p class='empty-msg'>Vui lòng nhập mã để tìm kiếm.</p>";
         list.style.display = 'block';
         return;
     }
 
-    const data = dataToDisplay || (query ? remoteDataCache.filter(item => 
-        (item.content && item.content.toLowerCase().includes(query)) || 
-        (item.orderId && item.orderId.toLowerCase().includes(query))
-    ) : []);
-
     if (data.length === 0) {
-        list.innerHTML = `<p class='empty-msg'>${query ? 'Không tìm thấy dữ liệu.' : 'Bắt đầu gõ để tìm gợi ý...'}</p>`;
+        list.innerHTML = `<p class='empty-msg'>${query ? 'Không tìm thấy dữ liệu.' : 'Chưa có dữ liệu trong máy...'}</p>`;
         return;
     }
 
-    list.innerHTML = data.slice(0, 50).map(item => `
+    // Tối ưu render: Dùng DocumentFragment hoặc tạo chuỗi một lần
+    // Tăng giới hạn hiển thị lên 100 để "Xem tất cả" có ý nghĩa hơn
+    const limit = dataToDisplay ? 200 : 100;
+    
+    let htmlContent = "";
+    
+    // Yêu cầu v1.1.3: Hiển thị Tổng số đơn hàng trên cùng khi xem tất cả
+    if (dataToDisplay) {
+        htmlContent += `<div class="total-count-header">TỔNG CỘNG: ${data.length} ĐƠN HÀNG (30 NGÀY)</div>`;
+    }
+
+    const listHtml = data.slice(0, limit).map(item => `
         <div class="history-item ${selectedRemoteItem && selectedRemoteItem.orderId === item.orderId ? 'selected' : ''}" 
              onclick='selectRemoteItem(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
             <div class="history-item-header">
@@ -704,6 +819,8 @@ function displayRemoteData(dataToDisplay = null) {
             <div class="history-item-content">${item.content}</div>
         </div>
     `).join('');
+    
+    list.innerHTML = htmlContent + listHtml;
 }
 
 
@@ -761,12 +878,60 @@ function filterHistory() {
     loadLocalHistory(filtered);
 }
 
-function startSearchScan(target) {
+async function startSearchScan(target) {
     searchTarget = target;
-    switchTab('scan');
-    isSearchScanning = true;
-    showToast(`Quét mã để tìm trong ${target === 'history' ? 'máy' : 'Hệ thống'}...`);
-    if (!isScanning) toggleScanner();
+    const modal = document.getElementById('search-scan-modal');
+    if (!modal) return;
+
+    modal.classList.add('active');
+    
+    try {
+        if (!searchScanner) searchScanner = new Html5Qrcode("search-reader");
+        
+        const deviceId = localStorage.getItem('nvh_scanner_cam_id') || localStorage.getItem('nvh_camera_id');
+        const config = deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" };
+
+        await searchScanner.start(
+            config,
+            { fps: 15, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+                playBeep();
+                triggerFlash();
+                
+                // Điền vào ô tìm kiếm tương ứng
+                if (target === 'data') {
+                    const input = document.getElementById('remote-search-input');
+                    if (input) {
+                        input.value = decodedText;
+                        filterRemoteData(true);
+                    }
+                } else if (target === 'review') {
+                    const input = document.getElementById('review-order-id');
+                    if (input) {
+                        input.value = decodedText;
+                        filterReviewData(true);
+                    }
+                }
+                
+                stopSearchScanModal();
+                showToast("✅ Đã tìm thấy: " + decodedText);
+            }
+        );
+    } catch (err) {
+        showToast("Lỗi camera: " + err);
+        stopSearchScanModal();
+    }
+}
+
+async function stopSearchScanModal() {
+    const modal = document.getElementById('search-scan-modal');
+    if (modal) modal.classList.remove('active');
+    
+    if (searchScanner) {
+        try {
+            await searchScanner.stop();
+        } catch (e) { console.warn("Stop search scanner error:", e); }
+    }
 }
 
 function clearLocalHistory() {
@@ -776,15 +941,34 @@ function clearLocalHistory() {
     }
 }
 
-function showToast(msg) {
+let toastTimeout = null;
+function showToast(msg, duration = 2500) {
     const toast = document.getElementById('toast');
+    if (!toast) return;
+
     toast.innerText = msg;
     toast.classList.add('show');
     toast.style.transform = "translateX(-50%) translateY(0)";
+    
+    // Clear timeout cũ nếu có
+    if (toastTimeout) clearTimeout(toastTimeout);
+
+    // Nếu duration là -1 thì không tự động đóng
+    if (duration !== -1) {
+        toastTimeout = setTimeout(() => {
+            hideToast();
+        }, duration);
+    }
+}
+
+function hideToast() {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+
+    toast.style.transform = "translateX(-50%) translateY(100px)";
     setTimeout(() => {
-        toast.style.transform = "translateX(-50%) translateY(100px)";
-        setTimeout(() => toast.classList.remove('show'), 400);
-    }, 2500);
+        toast.classList.remove('show');
+    }, 400);
 }
 
 // --- HỆ THỐNG KÍCH HOẠT DIAMOND v2.0.0 ---
@@ -1242,6 +1426,12 @@ function filterReviewData(immediate = false) {
     
     if (!query) {
         list.style.display = 'none';
+        return;
+    }
+
+    if (query.length < 3 && !immediate) {
+        list.style.display = 'block';
+        list.innerHTML = "<p class='empty-msg text-warning'>Nhập ít nhất 3 ký tự...</p>";
         return;
     }
 

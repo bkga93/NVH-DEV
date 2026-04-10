@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TCT Scanner Pro V1.1.0 Beta | Diamond Edition</title>
+    <title>TCT Scanner Pro V1.1.6 Beta | Diamond Edition</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2D0B2D">
@@ -159,9 +159,12 @@
                                 <span>📷</span>
                             </button>
                         </div>
-                        <button class="refresh-btn-inline" onclick="fetchDataFromSheets()">
-                            <span>🔄</span>
-                        </button>
+                        <div class="action-group-inline">
+                            <button class="view-all-btn" onclick="showAllRemoteData()">TẤT CẢ</button>
+                            <button class="download-btn-main" onclick="fetchDataFromSheets()">
+                                <i>📥</i> TẢI DỮ LIỆU
+                            </button>
+                        </div>
                     </div>
                     <div class="data-update-status">
                         <span id="last-update-display">Cập nhật: Đang tải...</span>
@@ -189,7 +192,24 @@
 
                 <!-- Review View (Synchronized Playback) -->
                 <section id="review-view" class="view" style="display: none;">
-                    <div class="dual-player-container">
+                    <div class="dev-banner-container">
+                        <div class="dev-banner">⚠️ Tính năng này đang được phát triển ....</div>
+                    </div>
+        <!-- Modal Quét mã tại Tab -->
+        <div id="search-scan-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>QUÉT MÃ TÌM KIẾM</h3>
+                    <button class="close-modal" onclick="stopSearchScanModal()">×</button>
+                </div>
+                <div class="modal-body">
+                    <div id="search-reader"></div>
+                    <p class="modal-hint">Vui lòng đưa mã vào khung hình</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="review-player-panel">
                         <div class="player-box">
                             <video id="video-review-1" controls playsinline></video>
                             <span class="player-label">GÓC 1 (QUÉT)</span>
@@ -278,7 +298,7 @@
         </div>
 
         <footer class="footer">
-            <span class="copyright">Thực hiện bởi <i>NVH</i> — V1.1.0 Beta</span>
+            <span class="copyright">Thực hiện bởi <i>NVH</i> — V1.1.6 Beta</span>
         </footer>
     </div>
 
@@ -332,7 +352,7 @@
         </div>
 
         <div class="drawer-footer">
-            <div class="version-info">NVH Scanner Pro — V1.1.0 Beta</div>
+            <div class="version-info">NVH Scanner Pro — V1.1.6 Beta</div>
         </div>
     </div>
 
@@ -481,16 +501,51 @@
             <div class="changelog-container">
                 <div class="changelog-list">
                     <div class="changelog-item">
-                        <span class="ver-tag">V1.1.0 Beta</span>
+                        <span class="ver-tag">V1.1.6 Beta</span>
                         <ul>
-                            <li><b>Tìm kiếm:</b> Nâng cấp hệ thống gợi ý tức thì (Instant Suggestion) ngay khi gõ.</li>
-                            <li><b>Đồng bộ:</b> Tự động lọc dữ liệu 30 ngày gần nhất và loại bỏ mã trùng lặp khi cập nhật.</li>
-                            <li><b>Thời gian:</b> Đồng bộ định dạng thời gian chuẩn <code>DD/MM/YYYY HH:mm:ss</code> toàn hệ thống.</li>
-                            <li><b>Giao diện:</b> Tự động ẩn danh sách tìm kiếm khi ô nhập trống để tối ưu không gian.</li>
+                            <li><b>Hệ thống:</b> Sửa lỗi không nhận diện dữ liệu nhập tay từ Google Sheets (Flexible Date Parsing).</li>
+                            <li><b>UX:</b> Điều chỉnh thời gian hiển thị thông báo (Toast) về mức 2 giây chuẩn.</li>
+                            <li><b>UI:</b> Thêm dòng trạng thái đang phát triển cho Tab Xem lại.</li>
                         </ul>
                     </div>
                     <div class="changelog-item">
-                        <span class="ver-tag">V1.0.0 Beta</span>
+                        <span class="ver-tag">V1.1.5 Beta</span>
+                        <ul>
+                            <li><b>UX:</b> Thông báo "Đang tải dữ liệu" sẽ hiển thị liên tục cho đến khi hoàn tất quá trình đồng bộ.</li>
+                            <li><b>UI:</b> Cải thiện trải nghiệm phản hồi người dùng khi kết nối mạng chậm.</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
+                        <span class="ver-tag">V1.1.4 Beta</span>
+                        <ul>
+                            <li><b>Dữ liệu:</b> Tự động nhận diện và chuẩn hóa dữ liệu từ Sheets (hỗ trợ cả mảng 2D/Columns).</li>
+                            <li><b>Lỗi:</b> Sửa lỗi parse ngày tháng có định dạng dấu gạch ngang (-) và khoảng trắng lạ.</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
+                        <span class="ver-tag">V1.1.3 Beta</span>
+                        <ul>
+                            <li><b>UX:</b> Hỗ trợ Quét mã tìm kiếm ngay tại Tab (In-Tab Scan) thông qua cửa sổ Modal.</li>
+                            <li><b>Dữ liệu:</b> Nâng cấp nút "TẢI DỮ LIỆU" từ hệ thống về máy để tìm kiếm offline.</li>
+                            <li><b>Thống kê:</b> Hiển thị tổng số đơn hàng hiện có khi xem toàn bộ dữ liệu.</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
+                        <span class="ver-tag">V1.1.2 Beta</span>
+                        <ul>
+                            <li><b>Tìm kiếm:</b> Chỉ hiển thị gợi ý khi nhập từ 3 ký tự trở lên (theo yêu cầu tối ưu danh sách).</li>
+                            <li><b>Giao diện:</b> Cải thiện thông báo trạng thái tìm kiếm để người dùng dễ theo dõi.</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
+                        <span class="ver-tag">V1.1.1 Beta</span>
+                        <ul>
+                            <li><b>Tốc độ:</b> Tối ưu hóa render danh sách giúp tìm kiếm phản hồi tức thì.</li>
+                            <li><b>Tính năng:</b> Thêm nút "XEM TẤT CẢ" để xem nhanh toàn bộ dữ liệu đã tải.</li>
+                        </ul>
+                    </div>
+                    <div class="changelog-item">
+                        <span class="ver-tag">V1.1.0 Beta</span>
                         <ul>
                             <li><b>Hệ thống:</b> Cập nhật phiên bản chính thức Beta 1.0.</li>
                             <li><b>Tìm kiếm:</b> Tối ưu hóa hiển thị Tab Dữ liệu (ID làm tiêu đề, Nội dung làm phần thân).</li>
@@ -686,7 +741,7 @@
             </div>
             <button class="btn-activate-gold" onclick="activateApp()">KÍCH HOẠT DIAMOND EDITION</button>
             <p id="activation-error" class="gold-error" style="display: none;">Key kích hoạt không chính xác!</p>
-            <div class="activation-footer-gold">TCT Scanner Pro — V1.1.0 Beta</div>
+            <div class="activation-footer-gold">TCT Scanner Pro — V1.1.6 Beta</div>
         </div>
     </div>
 

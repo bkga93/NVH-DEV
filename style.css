@@ -9,6 +9,31 @@
     --warning: #FFBB33;
 }
 
+/* Banner Thông báo Phát triển v1.1.6 */
+.dev-banner-container {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.dev-banner {
+    background: rgba(255, 215, 0, 0.1);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+    animation: bannerGlow 2s infinite alternate;
+}
+
+@keyframes bannerGlow {
+    from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); border-color: rgba(255,215,0,0.5); }
+    to { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); border-color: var(--primary-color); }
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -319,6 +344,69 @@ body {
     gap: 10px;
 }
 
+.action-group-inline {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.download-btn-main {
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary-color), #E6C200);
+    color: var(--surface-color);
+    border: none;
+    padding: 0 15px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+}
+
+.download-btn-main:active {
+    transform: scale(0.95);
+    filter: brightness(0.9);
+}
+
+.download-btn-main i {
+    font-style: normal;
+}
+
+.download-btn-main.refreshing i {
+    animation: rotate 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.view-all-btn {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 0 15px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 50px;
+    white-space: nowrap;
+}
+
+.view-all-btn:active {
+    background: var(--primary-color);
+    color: var(--surface-color);
+}
+
 .search-box {
     display: flex;
     flex: 1;
@@ -375,6 +463,90 @@ body {
 
 .history-item-time {
     color: var(--gray-text);
+}
+
+/* Modal Quét tại Tab */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: var(--surface-color);
+    width: 100%;
+    max-width: 400px;
+    border-radius: 24px;
+    border: 2px solid var(--primary-color);
+    overflow: hidden;
+    position: relative;
+}
+
+.modal-header {
+    background-color: var(--accent-color);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.modal-header h3 {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-body {
+    padding: 20px;
+    text-align: center;
+}
+
+#search-reader {
+    width: 100%;
+    aspect-ratio: 1;
+    background: black;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.modal-hint {
+    margin-top: 15px;
+    font-size: 0.8rem;
+    color: var(--gray-text);
+}
+
+.total-count-header {
+    background-color: rgba(255, 215, 0, 0.1);
+    color: var(--primary-color);
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
 }
 
 /* --- PC Mode Layout v1.6.5 --- */
