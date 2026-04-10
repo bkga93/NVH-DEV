@@ -771,7 +771,33 @@ input:checked + .slider:before { transform: translateX(20px); }
     50% { opacity: 0.5; transform: scale(1.05); }
     100% { opacity: 1; transform: scale(1); }
 }
-/* Tab Data Buttons v1.1.8.6 */
+
+/* Fix Layout v1.1.8.7 */
+.review-bottom-panel .search-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+
+.review-bottom-panel .search-box {
+    display: flex;
+    width: 100%;
+    gap: 5px;
+}
+
+.refresh-btn-inline {
+    width: 100%;
+    margin-top: 5px;
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px dashed var(--primary-color);
+    color: var(--primary-color);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Tab Data Buttons v1.1.8.6/7 */
 .action-group-inline {
     display: flex;
     gap: 8px;

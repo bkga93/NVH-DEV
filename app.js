@@ -249,6 +249,20 @@ async function toggleScanner() {
     const mainText = btn?.querySelector('.btn-main-text');
     const subText = btn?.querySelector('.btn-sub-text');
 
+    // Fix lỗi treo camera (v1.1.8.7) - Đảm bảo dừng hẳn trước khi bật
+    if (html5QrCode) {
+        try {
+            const state = html5QrCode.getState();
+            if (state === 2 || state === 3) { // 2=Scanning, 3=Paused
+                await html5QrCode.stop();
+            }
+            html5QrCode = null;
+        } catch(e) { console.warn("Stop scanner error:", e); }
+    }
+    
+    // Đợi 1 nhịp nhỏ để trình duyệt giải phóng phần cứng
+    await new Promise(r => setTimeout(r, 100));
+    
     if (!isScanning) {
         try {
             if (!useIPCamera) {
@@ -1188,7 +1202,7 @@ function previewSound(val) {
 }
 
 window.onload = () => {
-    console.log("🚀 TCT APP V1.1.8.6 - DIAMOND RECONSTRUCTION IS LIVE!");
+    console.log("🚀 TCT APP V1.1.8.7 - SUPER STABLE EDITION IS LIVE!");
     // Khởi tạo mặc định
     if (localStorage.getItem('nvh_sound_type') === null) {
         localStorage.setItem('nvh_sound_type', 'standard');
