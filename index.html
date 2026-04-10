@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TCT Scanner Pro V1.1.9.6 Cloud | Diamond Edition</title>
-    <link rel="stylesheet" href="style.css?v=1.1.9.6">
+    <title>TCT Scanner Pro V1.1.9.7 Cloud | Diamond Edition</title>
+    <link rel="stylesheet" href="style.css?v=1.1.9.7">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2D0B2D">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,6 +42,11 @@
 
                 <div class="scanner-container">
                     <div id="reader"></div>
+                    <div id="scan-result-overlay" class="scan-result-overlay">
+                        <span class="check-icon">✓</span>
+                        <div class="result-msg">QUÉT THÀNH CÔNG</div>
+                        <div id="result-order-id" class="order-text"></div>
+                    </div>
                     <div class="scan-overlay">
                         <div class="corner tl"></div><div class="corner tr"></div>
                         <div class="corner bl"></div><div class="corner br"></div>
@@ -100,7 +105,7 @@
         </main>
 
         <footer class="footer">
-            <span>Thực hiện bởi <i>NVH</i> — V1.1.9.6 Cloud Era</span>
+            <span>Thực hiện bởi <i>NVH</i> — V1.1.9.7 Cloud Era</span>
         </footer>
     </div>
 
@@ -136,6 +141,11 @@
                     <span class="icon">🎨</span>
                     <div class="text"><span class="title">Hiển thị</span><span class="desc">Giao diện & Cỡ chữ</span></div>
                 </div>
+                <!-- V1.1.9.7 Database Admin -->
+                <div class="menu-group-item" onclick="openSettings('database')">
+                    <span class="icon">🗄️</span>
+                    <div class="text"><span class="title">Cơ sở dữ liệu</span><span class="desc">Quản trị & Bảo mật</span></div>
+                </div>
                 <div class="menu-group-item" onclick="openChangelog()">
                     <span class="icon">📜</span>
                     <div class="text"><span class="title">Nhật ký phiên bản</span><span class="desc">Các thay đổi gần đây</span></div>
@@ -143,7 +153,7 @@
             </div>
         </div>
         <div class="drawer-footer">
-            <p style="font-size:0.7rem; color:var(--gray-text); text-align:center;">V1.1.9.6 Diamond Cloud</p>
+            <p style="font-size:0.7rem; color:var(--gray-text); text-align:center;">V1.1.9.7 Diamond Cloud</p>
         </div>
     </div>
 
@@ -196,6 +206,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=1.1.9.6"></script>
+    <script src="app.js?v=1.1.9.7"></script>
 </body>
 </html>

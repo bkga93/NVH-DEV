@@ -150,6 +150,44 @@ body {
     z-index: 10;
 }
 
+/* Scan Success Overlay v1.1.9.7 */
+.scan-result-overlay {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--success);
+    border-radius: 30px;
+    padding: 30px;
+    color: white;
+    text-align: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    min-width: 260px;
+}
+
+.scan-result-overlay.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    pointer-events: auto;
+}
+
+.scan-result-overlay .check-icon {
+    font-size: 3rem;
+    color: var(--success);
+    display: block;
+    margin-bottom: 10px;
+}
+
+.scan-result-overlay .order-text {
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--primary-color);
+}
+
 .corner {
     position: absolute;
     width: 45px; height: 45px;
@@ -299,9 +337,20 @@ input:checked + .slider:before { transform: translateX(24px); }
     margin-top: 20px;
 }
 
-.btn-overwrite { background: var(--danger) !important; color: white !important; }
-.btn-keep { background: var(--success) !important; color: var(--surface-color) !important; }
-.btn-skip { background: var(--gray-text) !important; color: var(--surface-color) !important; }
+.btn-overwrite { background: var(--danger) !important; color: white !important; font-size: 1rem !important; }
+.btn-keep { background: var(--success) !important; color: var(--surface-color) !important; font-size: 1rem !important; }
+.btn-skip { background: var(--gray-text) !important; color: var(--surface-color) !important; font-size: 1rem !important; }
+
+.admin-action-btn {
+    background: var(--danger);
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    width: 100%;
+    font-weight: 800;
+    margin-top: 15px;
+}
 
 /* Detail View */
 .detail-info {
