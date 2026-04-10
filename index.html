@@ -3,767 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TCT Scanner Pro V1.1.8.3 Beta | Diamond Edition</title>
-    <link rel="stylesheet" href="style.css?v=1.1.8.3">
+    <title>NVH Scanner Pro</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2D0B2D">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
-    <div class="app-container" id="app-container">
-        <!-- Flash Overlay (Success effect) -->
-        <div id="flash-overlay" class="flash-overlay"></div>
-
+    <div class="app-container">
+        <!-- Tabs Navigation with Menu Integrated -->
         <nav class="tabs-nav">
             <button class="menu-btn-inline" onclick="toggleDrawer(true)">☰</button>
             <button class="tab-btn active" id="btn-tab-scan" onclick="switchTab('scan')">QUÉT MÃ</button>
             <button class="tab-btn" id="btn-tab-history" onclick="switchTab('history')">LỊCH SỬ</button>
             <button class="tab-btn" id="btn-tab-data" onclick="switchTab('data')">DỮ LIỆU</button>
-            <button class="tab-btn" id="btn-tab-review" onclick="switchTab('review')">XEM LẠI</button>
         </nav>
 
         <!-- Flash Overlay (Success effect) -->
 
-        <!-- Main Content Wrapper (Supports PC Mode) -->
-        <div class="app-main-layout" id="main-layout">
-            <main class="tab-content">
-                <!-- Scan View -->
-                <section id="scan-view" class="view active">
-                    <!-- GIAO DIỆN MOBILE (Mặc định) -->
-                    <div id="mobile-scan-ui">
-                        <div class="mode-selector-container">
-                            <div class="mode-switch">
-                                <input type="radio" name="scanMode" id="modeSingle" value="single" checked>
-                                <label for="modeSingle">Quét từng mã</label>
-                                <input type="radio" name="scanMode" id="modeContinuous" value="continuous">
-                                <label for="modeContinuous">Quét liên tục</label>
-                            </div>
-                        </div>
-
-                        <div class="scanner-container">
-                            <div id="reader"></div>
-                            <div class="scan-overlay">
-                                <div class="corner tl"></div><div class="corner tr"></div>
-                                <div class="corner bl"></div><div class="corner br"></div>
-                            </div>
-                        </div>
-
-                        <div class="controls-container">
-                            <button id="start-btn" class="pc-action-btn" onclick="toggleScanner()">
-                                <span class="btn-main-text">BẮT ĐẦU QUÉT</span>
-                                <span class="btn-sub-text">Nhấn để kích hoạt Camera</span>
-                            </button>
-                            <div class="pc-status-card">
-                                <span class="status-label">Mã vừa quét:</span>
-                                <div id="pc-last-scanned" class="status-value">Đang chờ...</div>
-                            </div>
-                        </div>
+        <!-- Main Content -->
+        <main class="tab-content">
+            <!-- Scan View -->
+            <section id="scan-view" class="view active">
+                <!-- Mode Selector -->
+                <div class="mode-selector-container">
+                    <div class="mode-switch">
+                        <input type="radio" name="scanMode" id="modeSingle" value="single" checked>
+                        <label for="modeSingle">Quét từng mã</label>
+                        <input type="radio" name="scanMode" id="modeContinuous" value="continuous">
+                        <label for="modeContinuous">Quét liên tục</label>
                     </div>
-
-                    <!-- GIAO DIỆN PC PRO (v1.9.5) -->
-                    <div id="pc-pro-ui">
-                        <div class="pc-layout-wrapper">
-                            <!-- Cột Trái: Giống Mobile -->
-                            <div class="pc-left-col">
-                                <h3 style="color: var(--primary-color); font-size: 0.9rem; margin-bottom: 10px;">BỘ QUÉT MÃ ĐƠN</h3>
-                                <div id="pc-reader-container" class="scanner-container" style="height: 250px;">
-                                    <!-- Reader sẽ được di chuyển vào đây bằng JS -->
-                                </div>
-                                <div class="pc-status-card">
-                                    <span class="status-label">MÃ VỪA QUÉT:</span>
-                                    <div id="pc-pro-last-scanned" class="status-value" style="font-size: 1.8rem;">Đang chờ...</div>
-                                    <div id="pc-pro-status-msg" class="status-hint">Sẵn sàng</div>
-                                </div>
-                                <button id="pc-scan-btn" class="pc-action-btn" onclick="toggleScanner()">
-                                    <span class="btn-main-text">BẮT ĐẦU QUÉT</span>
-                                </button>
-
-                                <!-- Ô SỐ 1: BẢNG LỊCH SỬ QUÉT NHANH v2.1.0 -->
-                                <div class="pc-recent-container">
-                                    <div class="pc-recent-header">
-                                        <span>📋 LỊCH SỬ QUÉT NHANH</span>
-                                        <span id="pc-recent-count" class="badge">0</span>
-                                    </div>
-                                    <div id="pc-recent-list" class="pc-recent-list">
-                                        <div class="recent-empty">Chưa có mã đơn nào...</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Cột Phải: Giám sát & Ghi hình -->
-                            <div class="pc-right-col">
-                                <div class="pc-rec-dashboard">
-                                    <div class="rec-status-info">
-                                        <div id="pc-rec-indicator" class="recording-indicator" style="position: static; padding: 0; background: transparent;">
-                                            <span class="rec-dot" style="width: 12px; height: 12px;"></span>
-                                            <span id="pc-rec-timer" style="font-size: 1.2rem; font-weight: 800; color: white;">00:00</span>
-                                        </div>
-                                        <label class="auto-rec-toggle">
-                                            <input type="checkbox" id="auto-rec-checkbox" checked>
-                                            🚀 Tự động ghi khi quét
-                                        </label>
-                                    </div>
-                                    <div class="rec-btn-group">
-                                        <button class="rec-btn btn-start-rec" onclick="startManualRec()">🔴 BẮT ĐẦU GHI</button>
-                                        <button class="rec-btn btn-stop-rec" onclick="stopManualRec()">⏹️ DỪNG GHI</button>
-                                    </div>
-                                </div>
-
-                                <div class="pc-monitoring-grid" id="pc-monitor-layout">
-                                    <div class="monitor-box" id="monitor-1">
-                                        <div class="monitor-label">GÓC 1: CẬN CẢNH (QUÉT)</div>
-                                        <video id="pc-video-1" autoplay muted playsinline></video>
-                                        <div id="monitor-cam-1" class="monitor-placeholder" style="display: flex;">📷 Camera 1</div>
-                                    </div>
-                                    
-                                    <!-- RESIZER BAR v2.0.0 -->
-                                    <div class="pc-resizer" id="pc-resizer-bar"></div>
-
-                                    <div class="monitor-box" id="monitor-2">
-                                        <div class="monitor-label">GÓC 2: TOÀN CẢNH</div>
-                                        <video id="pc-video-2" autoplay muted playsinline></video>
-                                        <div id="monitor-cam-2" class="monitor-placeholder" style="display: flex;">📷 Camera 2</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- History View, Data View (omitted for brevity in replacement, will keep them) -->
-                <section id="history-view" class="view" style="display: none;">
-                    <div class="search-container">
-                        <div class="search-box">
-                            <input type="text" id="search-input" placeholder="Tìm kiếm trong máy..." onkeyup="filterHistory()">
-                            <button class="search-scan-btn" onclick="startSearchScan('history')">
-                                <span>📷</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="history-header">
-                        <h3>Lịch sử quét tại máy</h3>
-                        <button class="clear-btn" onclick="clearLocalHistory()">Xóa hết</button>
-                    </div>
-                    <div id="history-list" class="history-list"></div>
-                </section>
-
-                <section id="data-view" class="view" style="display: none;">
-                    <div class="search-container">
-                        <div class="search-box">
-                            <input type="text" id="remote-search-input" placeholder="Tìm mã trên Sheets..." onkeyup="filterRemoteData()">
-                            <button class="search-scan-btn" onclick="startSearchScan('data')">
-                                <span>📷</span>
-                            </button>
-                        </div>
-                        <div class="action-group-inline">
-                            <button class="view-all-btn" onclick="showAllRemoteData()">TẤT CẢ</button>
-                            <button class="download-btn-main" onclick="fetchDataFromSheets()">
-                                <i>📥</i> TẢI DỮ LIỆU
-                            </button>
-                        </div>
-                    </div>
-                    <div class="data-update-status">
-                        <span id="last-update-display">Cập nhật: Đang tải...</span>
-                    </div>
-                    <div id="remote-data-list" class="history-list"></div>
-                    <div id="item-detail-panel" class="detail-panel" style="display: none;">
-                        <h4 class="detail-title">THÔNG TIN CHI TIẾT</h4>
-                        <div class="detail-row highlight-row main-time-row">
-                            <div class="time-label">THỜI GIAN QUÉT</div>
-                            <div id="detail-time" class="highlight-time">...</div>
-                        </div>
-                        <div class="detail-row">
-                            <span>Mã đơn hàng:</span> 
-                            <div class="id-copy-group">
-                                <strong id="detail-content-val" style="color: var(--primary-color);">...</strong>
-                                <button class="copy-btn" onclick="copyOrderCode()">📋</button>
-                            </div>
-                        </div>
-                        <div class="detail-row" style="opacity: 0.6; font-size: 0.75rem;">
-                            <span>ID hệ thống:</span> 
-                            <span id="detail-id">...</span>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Review View (Synchronized Playback) -->
-                <section id="review-view" class="view" style="display: none;">
-                    <div class="dev-banner-container">
-                        <div class="dev-banner">⚠️ Tính năng này đang được phát triển ....</div>
-                    </div>
-        <!-- Modal Quét mã tại Tab -->
-        <div id="search-scan-modal" class="modal-overlay">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>QUÉT MÃ TÌM KIẾM</h3>
-                    <button class="close-modal" onclick="stopSearchScanModal()">×</button>
-                </div>
-                <div class="modal-body">
-                    <div id="search-reader"></div>
-                    <p class="modal-hint">Vui lòng đưa mã vào khung hình</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="review-player-panel">
-                        <div class="player-box">
-                            <video id="video-review-1" controls playsinline></video>
-                            <span class="player-label">GÓC 1 (QUÉT)</span>
-                        </div>
-                        <div class="player-box">
-                            <video id="video-review-2" controls playsinline></video>
-                            <span class="player-label">GÓC 2 (TOÀN CẢNH)</span>
-                        </div>
-                    </div>
-                    
-                    <div id="review-detail-panel" class="detail-panel" style="display: none; margin-bottom: 20px;">
-                        <div class="detail-row highlight-row"><span>Thời gian quét:</span> <span id="review-detail-time" class="highlight-time">...</span></div>
-                        <div class="detail-row"><span>Mã đơn hàng:</span> <strong id="review-detail-content" style="color: var(--primary-color);">...</strong></div>
-                        <div class="detail-row">
-                            <span>Trạng thái:</span>
-                            <div class="status-group">
-                                <span id="status-cloud" class="status-badge">☁️ Cloud</span>
-                                <span id="status-local" class="status-badge">📂 Máy</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="review-bottom-panel">
-                        <div id="review-data-list" class="history-list small-list" style="display: none; margin-bottom: 10px; max-height: 200px;"></div>
-                        
-                        <div class="search-container">
-                             <div class="search-box">
-                                <input type="text" id="review-order-id" placeholder="Tìm mã trên Hệ thống..." onkeyup="filterReviewData()">
-                                <button class="search-scan-btn" onclick="filterReviewData(true)">
-                                    <span>🔍</span>
-                                </button>
-                            </div>
-                            <button class="refresh-btn-inline" onclick="fetchDataFromSheets()">
-                                <span>🔄</span>
-                            </button>
-                        </div>
-                        
-                        <div class="review-controls">
-                            <button id="btn-sync-play" class="sync-play-btn glow disabled" onclick="syncPlayPause()" disabled>PHÁT ĐỒNG BỘ</button>
-                            <div id="download-container" class="download-container" style="display: none;">
-                                <button id="btn-download" class="sync-play-btn download-btn" onclick="downloadVideoFromCloud()">
-                                    <div id="download-progress" class="progress-fill"></div>
-                                    <span id="download-text">TẢI VIDEO</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </main>
-
-            <!-- PC Monitor Panel (Right side in PC mode) -->
-            <aside class="monitor-panel" id="pc-monitor" style="display: none;">
-                <div class="monitor-header">
-                    <span>HỆ THỐNG GIÁM SÁT 2 GÓC MÁY</span>
-                    <div id="pc-rec-indicator" class="pc-rec" style="display: none;">🔴 ĐANG GHI HÌNH</div>
                 </div>
 
-                <!-- Monitor Controls v1.6.5 -->
-                <div class="monitor-controls">
-                    <div class="control-group">
-                        <button id="manual-rec-btn" class="monitor-btn btn-rec" onclick="manualStartRecording()">
-                            🔴 GHI HÌNH THỦ CÔNG
-                        </button>
-                        <button id="manual-stop-btn" class="monitor-btn" onclick="stopDualRecording()" disabled style="opacity: 0.5;">
-                            ⏹️ DỪNG GHI
+                <!-- Main Scanner UI -->
+                <div class="scanner-container" id="scanner-ui">
+                    <div id="reader"></div>
+                    <div class="scan-overlay" id="scan-overlay-frame">
+                        <div class="corner tl"></div>
+                        <div class="corner tr"></div>
+                        <div class="corner bl"></div>
+                        <div class="corner br"></div>
+                    </div>
+                </div>
+
+                <div class="controls-container">
+                    <button id="start-btn" class="main-scan-btn glow" onclick="toggleScanner()">
+                        <span id="btn-text">BẮT ĐẦU QUÉT</span>
+                        <div class="btn-subtext" id="btn-subtext">Nhấn để khởi động Camera</div>
+                    </button>
+                </div>
+
+                <!-- Last Scan Status -->
+                <div class="last-scan-status" id="last-scan-info">
+                    <div class="status-header">Mã vừa quét:</div>
+                    <div class="status-content" id="scanned-result">Đang chờ...</div>
+                    <div class="status-footer" id="sync-status">Sẵn sàng</div>
+                </div>
+            </section>
+
+            <!-- History View -->
+            <section id="history-view" class="view" style="display: none;">
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Tìm kiếm trong máy..." onkeyup="filterHistory()">
+                        <button class="search-scan-btn" onclick="startSearchScan('history')">
+                            <span>📷</span>
                         </button>
                     </div>
-                    <div class="control-group-right">
-                        <label class="auto-rec-label">
-                            <input type="checkbox" id="auto-record-toggle" onchange="toggleAutoRecord()" checked>
-                            Tự động ghi khi quét mã
-                        </label>
-                    </div>
                 </div>
-                <div class="monitor-grid">
-                    <div class="monitor-box">
-                        <div id="monitor-cam-1" class="video-placeholder">CAMERA 1 (CHÍNH)</div>
-                        <video id="pc-video-1" autoplay muted playsinline></video>
-                    </div>
-                    <div class="monitor-box">
-                        <div id="monitor-cam-2" class="video-placeholder">CAMERA 2 (PHỤ)</div>
-                        <video id="pc-video-2" autoplay muted playsinline></video>
-                    </div>
-                </div>
-            </aside>
-        </div>
 
+                <div class="history-header">
+                    <h3>Lịch sử quét tại máy</h3>
+                    <button class="clear-btn" onclick="clearLocalHistory()">Xóa hết</button>
+                </div>
+
+                <div id="history-list" class="history-list">
+                    <p class="empty-msg">Chưa có dữ liệu nào.</p>
+                </div>
+            </section>
+
+            <!-- Remote Data View -->
+            <section id="data-view" class="view" style="display: none;">
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" id="remote-search-input" placeholder="Tìm mã trên Sheets..." onkeyup="filterRemoteData()">
+                        <button class="search-scan-btn" onclick="startSearchScan('data')">
+                            <span>📷</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="history-header">
+                    <div class="data-status-info">
+                        <h3>Dữ liệu trên Sheets</h3>
+                        <div id="last-update-time" class="update-time">Chưa cập nhật</div>
+                    </div>
+                    <button class="refresh-btn" onclick="fetchDataFromSheets()">
+                        <span id="refresh-icon">🔄</span> Cập nhật
+                    </button>
+                </div>
+
+                <div id="remote-data-list" class="history-list">
+                    <p class="empty-msg">Đang tải dữ liệu...</p>
+                </div>
+
+                <!-- Vùng hiển thị chi tiết đơn hàng cố định ở dưới -->
+                <div id="item-detail-panel" class="detail-panel">
+                    <div class="detail-header">CHI TIẾT ĐƠN HÀNG</div>
+                    <div class="detail-body">
+                        <div class="detail-row">
+                            <span class="detail-label">Thời gian quét:</span>
+                            <div id="detail-time" class="detail-value time-critical">--:--</div>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">ID quét:</span>
+                            <div id="detail-id" class="detail-value">--</div>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Mã vận chuyển:</span>
+                            <div id="detail-content" class="detail-value">--</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Copyright & Version -->
         <footer class="footer">
-            <span class="copyright">Thực hiện bởi <i>NVH</i> — V1.1.8.3 Beta</span>
+            <span class="copyright">Thực hiện bởi <i>NVH</i> — Version 1.4.2</span>
         </footer>
     </div>
 
     <!-- Sidebar (Drawer) Overlay -->
     <div id="drawer-overlay" class="drawer-overlay" onclick="toggleDrawer(false)"></div>
 
+    <!-- Side Sidebar (Drawer) -->
     <div id="side-drawer" class="side-drawer">
         <div class="drawer-header">
-            <h3>DANH MỤC CÀI ĐẶT</h3>
+            <h3>CÀI ĐẶT & THÔNG TIN</h3>
             <button class="close-drawer" onclick="toggleDrawer(false)">×</button>
         </div>
         
         <div class="drawer-content">
-            <div class="menu-group-list">
-                <button class="menu-group-item" onclick="openSettings('scan')">
-                    <span class="icon">🎯</span>
-                    <div class="text">
-                        <span class="title">Thiết lập Quét</span>
-                        <span class="desc">Âm thanh, Rung & Chế độ</span>
+            <!-- Sound & Vibrate Section -->
+            <div class="settings-group">
+                <label>Kiểu âm thanh thông báo</label>
+                <select id="sound-select" class="settings-select" onchange="previewSound()">
+                    <option value="standard">Mặc định (Bíp đơn)</option>
+                    <option value="double">Bíp kép (Nhanh)</option>
+                    <option value="deep">Âm trầm (Mạnh)</option>
+                    <option value="melody">Giai điệu (Thành công)</option>
+                </select>
+            </div>
+
+            <div class="settings-group toggle-group">
+                <label>Rung khi bắt mã</label>
+                <div class="toggle-switch">
+                    <input type="checkbox" id="vibrate-toggle" onchange="saveDeviceSettings()" checked>
+                    <span class="slider"></span>
+                </div>
+            </div>
+
+            <!-- Changelog Section (Last 5) -->
+            <div class="settings-divider"></div>
+            <div class="changelog-container">
+                <label>NHẬT KÝ THAY ĐỔI</label>
+                <div class="changelog-list">
+                    <div class="changelog-item">
+                        <span class="ver-tag">v1.4.2</span>
+                        <ul>
+                            <li>Gộp nút Menu vào cùng hàng với các Tab điều hướng.</li>
+                            <li>Tối ưu hóa vị trí sát mép Dynamic Island cho iPhone.</li>
+                            <li>Loại bỏ hoàn toàn các thanh Header thừa.</li>
+                        </ul>
                     </div>
-                </button>
-                <button class="menu-group-item" onclick="openSettings('storage')">
-                    <span class="icon">💾</span>
-                    <div class="text">
-                        <span class="title">Lưu trữ & PC Mode</span>
-                        <span class="desc">Google Drive, HDD & Chế độ PC</span>
+                    <div class="changelog-item" style="opacity:0.8">
+                        <span class="ver-tag">v1.4</span>
+                        <ul>
+                            <li>Loại bỏ tiêu đề TAYCAMTOT để tối ưu diện tích.</li>
+                            <li>Thử nghiệm đưa Menu lên vị trí cao nhất.</li>
+                        </ul>
                     </div>
-                </button>
-                <button class="menu-group-item" onclick="openSettings('camera')">
-                    <span class="icon">📷</span>
-                    <div class="text">
-                        <span class="title">Cấu hình Camera</span>
-                        <span class="desc">Chọn thiết bị quét & giám sát</span>
+                    <div class="changelog-item" style="opacity:0.6">
+                        <span class="ver-tag">v1.1</span>
+                        <ul>
+                            <li>Thêm 4 kiểu chuông và tính năng rung.</li>
+                            <li>Khôi phục hoàn toàn khung quét mã vuông 1:1.</li>
+                        </ul>
                     </div>
-                </button>
-                <button class="menu-group-item" onclick="openSettings('security')">
-                    <span class="icon">🛡️</span>
-                    <div class="text">
-                        <span class="title">Cài đặt Bảo mật</span>
-                        <span class="desc">Quản lý quyền mật khẩu vĩnh viễn</span>
+                    <div class="changelog-item" style="opacity:0.3">
+                        <span class="ver-tag">v1.0</span>
+                        <ul>
+                            <li>Phiên bản khởi tạo - Giao diện Dark Plum & Gold.</li>
+                        </ul>
                     </div>
-                </button>
-                <button class="menu-group-item" onclick="openSettings('changelog')">
-                    <span class="icon">📜</span>
-                    <div class="text">
-                        <span class="title">Nhật ký thay đổi</span>
-                        <span class="desc">Xem lịch sử cập nhật ứng dụng</span>
-                    </div>
-                </button>
+                </div>
             </div>
         </div>
 
         <div class="drawer-footer">
-            <div class="version-info">NVH Scanner Pro — V1.1.8.3 Beta</div>
-        </div>
-    </div>
-
-    <!-- Unified Settings Modal -->
-    <div id="settings-modal" class="modal-overlay">
-        <div class="modal-content settings-modal-content">
-            <div class="modal-header">
-                <h3 id="settings-title">CÀI ĐẶT</h3>
-                <button class="close-modal" onclick="closeSettings()">×</button>
-            </div>
-            
-            <div id="settings-body" class="modal-scroll-area">
-                <!-- Group contents will be injected here via JS -->
-            </div>
-
-            <div class="modal-footer">
-                <button class="modal-btn btn-overwrite" onclick="closeSettings()">HOÀN TẤT</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Template for Settings (Hidden) -->
-    <div id="settings-templates" style="display: none;">
-        <!-- Scan Settings -->
-        <div id="tmpl-scan">
-            <div class="settings-group">
-                <label style="color: var(--primary-color); font-weight: bold;">👤 TÊN NGƯỜI DÙNG (USER NAME)</label>
-                <input type="text" id="user-name-modal" class="settings-select" placeholder="Nhập tên của bạn..." onchange="saveModalSettings()">
-                <div class="settings-hint">Tên này sẽ được ghi vào cột A trên Sheets khi quét.</div>
-            </div>
-            <div class="settings-divider"></div>
-            <div class="settings-group">
-                <label>Kiểu âm thanh thông báo</label>
-                <select id="sound-select-modal" class="settings-select" onchange="previewSound(this.value)">
-                    <option value="standard">Mặc định (Bíp đơn)</option>
-                    <option value="double">Bíp kép (Nhanh)</option>
-                    <option value="triple">Bíp ba (Liên tục)</option>
-                    <option value="deep">Âm trầm (Mạnh)</option>
-                    <option value="sharp">Sắc lẹm (Ngắn)</option>
-                    <option value="laser">Tia Laser (Quét)</option>
-                    <option value="coin">Ăn xu (Game)</option>
-                    <option value="pulse">Nhịp xung (Mạnh)</option>
-                    <option value="melody">Giai điệu (Thành công)</option>
-                    <option value="scifi">Viễn tưởng (Phức hợp)</option>
-                </select>
-            </div>
-            <div class="settings-group toggle-group">
-                <label>Rung khi bắt mã</label>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="vibrate-toggle-modal" onchange="saveModalSettings()" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-
-        <!-- Security Settings v1.9.0 -->
-        <div id="tmpl-security">
-            <div class="settings-info-box" style="margin-bottom: 20px;">
-                <p>Nếu tắt mục này, App sẽ yêu cầu mã PIN mỗi khi bạn mở trang để đảm bảo an toàn.</p>
-            </div>
-            <div class="settings-group toggle-group">
-                <label style="color: var(--primary); font-weight: 600;">🔒 Yêu cầu mật khẩu khi mở App</label>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="auth-toggle-modal" onchange="saveModalSettings()">
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-
-        <!-- Storage Settings -->
-        <div id="tmpl-storage">
-            <div class="settings-group toggle-group">
-                <label>Chế độ PC (Đa màn hình)</label>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="pc-mode-toggle-modal" onchange="togglePCModeFromModal(this.checked)">
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div class="settings-divider"></div>
-            <div class="settings-group">
-                <label>ID Thư mục Google Drive</label>
-                <input type="text" id="drive-folder-id-modal" class="settings-select" placeholder="Dán ID thư mục tại đây..." onchange="saveModalSettings()">
-            </div>
-            <div class="settings-divider"></div>
-            <div class="settings-group">
-                <label>Vị trí lưu Video (Ổ cứng)</label>
-                <button class="modal-btn btn-append" onclick="requestHDDPermission()" style="width: 100%;">CẤP QUYỀN THƯ MỤC</button>
-                <div id="hdd-status-modal" class="settings-hint" style="margin-top: 5px;">Hỗ trợ PC Chrome/Edge</div>
-                <button class="modal-btn btn-append" onclick="clearLocalVideoCache()" style="width: 100%; background: var(--danger); margin-top: 15px;">XOÁ BỘ NHỚ VIDEO</button>
-                <div class="settings-hint" style="margin-top: 5px;">Giải phóng dung lượng iPhone/Mobile</div>
-            </div>
-        </div>
-
-        <!-- Camera Settings -->
-        <div id="tmpl-camera">
-            <div class="settings-group">
-                <label style="color: var(--primary-color);">CẤU HÌNH THIẾT BỊ</label>
-                <button class="modal-btn" onclick="refreshCameraList()" style="width: 100%; margin-bottom: 20px; font-size: 0.8rem; background: rgba(255,215,0,0.1); border: 1px solid var(--primary-color);">
-                    🔄 LÀM MỚI DANH SÁCH CAMERA
-                </button>
-                
-                <div class="cam-select-item" style="margin-bottom: 15px;">
-                    <label style="font-size: 0.8rem;">1. Camera Quét (Scanner)</label>
-                    <select id="scanner-cam-select-modal" class="settings-select" onchange="saveModalSettings()"></select>
-                </div>
-                <div class="cam-select-item" style="margin-bottom: 15px;">
-                    <label style="font-size: 0.8rem;">2. Camera Góc 1 (Monitor)</label>
-                    <select id="monitor1-cam-select-modal" class="settings-select" onchange="saveModalSettings()"></select>
-                </div>
-                <div class="cam-select-item" style="margin-bottom: 15px;">
-                    <label style="font-size: 0.8rem;">3. Camera Góc 2 (Monitor)</label>
-                    <select id="monitor2-cam-select-modal" class="settings-select" onchange="saveModalSettings()"></select>
-                </div>
-
-                <div class="settings-divider"></div>
-                
-                <div class="settings-group">
-                    <label style="color: var(--primary-color);">🌐 KẾT NỐI CAMERA IP (GO2RTC)</label>
-                    <div class="toggle-group" style="margin: 10px 0;">
-                        <label>Sử dụng Camera IP cho Quét mã</label>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="use-ip-camera-modal" onchange="saveModalSettings()">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div class="cam-select-item">
-                        <label style="font-size: 0.8rem;">Server URL (go2rtc)</label>
-                        <input type="text" id="go2rtc-server-modal" class="settings-select" placeholder="http://localhost:1984" onchange="saveModalSettings()">
-                    </div>
-                    <div class="cam-select-item" style="margin-top: 10px;">
-                        <label style="font-size: 0.8rem;">Tên luồng (Stream Name)</label>
-                        <input type="text" id="go2rtc-source-modal" class="settings-select" placeholder="cam1" onchange="saveModalSettings()">
-                    </div>
-                    
-                    <button class="modal-btn btn-append" onclick="testGo2RTCConnection()" style="width: 100%; margin-top: 15px; background: rgba(0, 255, 0, 0.1); border: 1px solid #00ff00;">
-                        ⚡ KIỂM TRA KẾT NỐI
-                    </button>
-                </div>
-
-                <div class="info-box-gold">
-                    <div class="info-title">💡 MẸO CAMERA IP</div>
-                    <div class="info-desc">
-                        Chạy file <b>go2rtc.exe</b> (Windows) hoặc binary (Mac), thêm link RTSP vào config. App sẽ tự động nhận luồng WebRTC cực nhanh.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Changelog Template -->
-        <div id="tmpl-changelog">
-            <div class="changelog-container">
-                <div class="changelog-list">
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.8.3 Beta</span>
-                        <ul>
-                            <li><b>Fix Dates:</b> Chấp nhận các chuỗi giờ giấc nhập tay không có số 0 dẫn đầu (ví dụ: 8:0:19).</li>
-                            <li><b>UI Update:</b> Hiển thị chính xác số lượng đơn hàng vừa tải thành công.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.7.4 Beta</span>
-                        <ul>
-                            <li><b>Live Sync Fix:</b> Thêm mã phá cache Google Sheets để dữ liệu cập nhật ngay tức thì khi nhấn Tải.</li>
-                            <li><b>Fix UI:</b> Loại bỏ lỗi cú pháp gây treo ứng dụng (Hotfix).</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.7.3 Beta</span>
-                        <ul>
-                            <li><b>Data OVERHAUL:</b> Xóa trắng bộ nhớ ứng dụng khi nhấn Tải dữ liệu để đảm bảo nạp mới 100%.</li>
-                            <li><b>Sync:</b> Ép tải dữ liệu trực tiếp từ server (Network No-Store).</li>
-                            <li><b>Fix Serial Date:</b> Hỗ trợ nhận diện định dạng ngày số (46122...) từ Google Sheets.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.7.2 Beta</span>
-                        <ul>
-                            <li><b>System:</b> Cập nhật Service Worker sang chiến lược "Network First" để giải quyết triệt để lỗi cache.</li>
-                            <li><b>Fix Bug:</b> Đảm bảo logic đồng bộ không gộp các đơn hàng trùng ID nhưng khác nội dung.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.7.1 Beta</span>
-                        <ul>
-                            <li><b>Cache:</b> Cưỡng bức làm mới trình duyệt (Cache Busting) để nhận bản cập nhật mới nhất.</li>
-                            <li><b>Logging:</b> Bổ sung log kỹ thuật để kiểm tra đơn hàng nhập tay.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.7 Beta</span>
-                        <ul>
-                            <li><b>Fix Bug:</b> Khắc phục lỗi Crash hệ thống do thiếu hàm hiển thị thời gian, giúp hiện đầy đủ đơn hàng nhập tay.</li>
-                            <li><b>UI:</b> Nút Tải dữ liệu có hiệu ứng dấu tích xanh ✅ sau khi hoàn tất thành công.</li>
-                            <li><b>UX:</b> Dòng trạng thái hiển thị rõ ràng số lượng đơn đã tải.</li>
-                            <li><b>Toast:</b> Tăng thời gian hiển thị thông báo lên 5 giây.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.6 Beta</span>
-                        <ul>
-                            <li><b>Hệ thống:</b> Sửa lỗi không nhận diện dữ liệu nhập tay từ Google Sheets (Flexible Date Parsing).</li>
-                            <li><b>UX:</b> Điều chỉnh thời gian hiển thị thông báo (Toast) về mức 2 giây chuẩn.</li>
-                            <li><b>UI:</b> Thêm dòng trạng thái đang phát triển cho Tab Xem lại.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.5 Beta</span>
-                        <ul>
-                            <li><b>UX:</b> Thông báo "Đang tải dữ liệu" sẽ hiển thị liên tục cho đến khi hoàn tất quá trình đồng bộ.</li>
-                            <li><b>UI:</b> Cải thiện trải nghiệm phản hồi người dùng khi kết nối mạng chậm.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.4 Beta</span>
-                        <ul>
-                            <li><b>Dữ liệu:</b> Tự động nhận diện và chuẩn hóa dữ liệu từ Sheets (hỗ trợ cả mảng 2D/Columns).</li>
-                            <li><b>Lỗi:</b> Sửa lỗi parse ngày tháng có định dạng dấu gạch ngang (-) và khoảng trắng lạ.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.3 Beta</span>
-                        <ul>
-                            <li><b>UX:</b> Hỗ trợ Quét mã tìm kiếm ngay tại Tab (In-Tab Scan) thông qua cửa sổ Modal.</li>
-                            <li><b>Dữ liệu:</b> Nâng cấp nút "TẢI DỮ LIỆU" từ hệ thống về máy để tìm kiếm offline.</li>
-                            <li><b>Thống kê:</b> Hiển thị tổng số đơn hàng hiện có khi xem toàn bộ dữ liệu.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.2 Beta</span>
-                        <ul>
-                            <li><b>Tìm kiếm:</b> Chỉ hiển thị gợi ý khi nhập từ 3 ký tự trở lên (theo yêu cầu tối ưu danh sách).</li>
-                            <li><b>Giao diện:</b> Cải thiện thông báo trạng thái tìm kiếm để người dùng dễ theo dõi.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.1 Beta</span>
-                        <ul>
-                            <li><b>Tốc độ:</b> Tối ưu hóa render danh sách giúp tìm kiếm phản hồi tức thì.</li>
-                            <li><b>Tính năng:</b> Thêm nút "XEM TẤT CẢ" để xem nhanh toàn bộ dữ liệu đã tải.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">V1.1.0 Beta</span>
-                        <ul>
-                            <li><b>Hệ thống:</b> Cập nhật phiên bản chính thức Beta 1.0.</li>
-                            <li><b>Tìm kiếm:</b> Tối ưu hóa hiển thị Tab Dữ liệu (ID làm tiêu đề, Nội dung làm phần thân).</li>
-                            <li><b>Ổn định:</b> Đồng bộ logic tìm kiếm hệ thống theo bản chuẩn.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v2.1.5</span>
-                        <ul>
-                            <li><b>PC Mode (Nâng cấp):</b> Thêm hướng dẫn kết nối Camera IP qua Virtual Webcam cho MacOS.</li>
-                            <li><b>Hệ thống:</b> Tối ưu hóa việc nhận diện tên thiết bị Camera để dễ dàng phân biệt Camera ảo.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v2.1.4</span>
-                        <ul>
-                            <li><b>Hệ thống (Sửa lỗi):</b> Khôi phục hiệu ứng Flash quét thành công và bảo vệ logic xử lý tránh kẹt trạng thái.</li>
-                            <li><b>Máy quét:</b> Điều chỉnh vùng quét ẩn bằng Opacity giúp thư viện hoạt động ổn định hơn trên iPhone.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v2.1.3</span>
-                        <ul>
-                            <li><b>Giao diện:</b> Khắc phục lỗi nút "Bắt đầu quét" không cập nhật trạng thái trên Mobile sau khi camera được bật.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v2.1.2</span>
-                        <ul>
-                            <li><b>Máy quét (Sửa lỗi):</b> Khắc phục triệt để lỗi treo giao diện "Bật camera nhưng không quét" do tham số cấu hình lỗi thời.</li>
-                            <li><b>Hệ thống:</b> Tối ưu hóa tốc độ nhận diện mã vạch toàn vùng trên cả Mobile và PC.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v2.1.0</span>
-                        <ul>
-                            <li><b>Lịch sử Quét nhanh:</b> Tích hợp bảng giám sát mã đơn trực tiếp tại giao diện PC Pro.</li>
-                            <li><b>Bảo mật Diamond:</b> Nâng cấp cơ chế lưu trữ Key kích hoạt bền vững trên đa nền tảng.</li>
-                            <li><b>Hệ thống:</b> Cập nhật mã kích hoạt mới và tối ưu hóa tốc độ khởi động.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.9.5</span>
-                        <ul>
-                            <li><b>PC Pro Mode:</b> Siêu giao diện 2 cột dành cho máy tính (Quét mã bên trái - Giám sát bên phải).</li>
-                            <li><b>Ghi hình:</b> Thêm trung tâm điều khiển Ghi hình thủ công và chế độ Tự động ghi khi quét mã.</li>
-                            <li><b>Hệ thống:</b> Tự động nhận diện thiết bị Máy tính/Tablet để kích hoạt giao diện chuyên nghiệp.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.9.1</span>
-                        <ul>
-                            <li><b>Bảo mật (Chuẩn hóa):</b> Bắt buộc nhập mật khẩu xác minh lần đầu tiên sau cập nhật. Hệ thống sẽ tự động ghi nhớ vĩnh viễn sau khi nhập đúng.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.9.0</span>
-                        <ul>
-                            <li><b>Bảo mật:</b> Tự động ghi nhớ thiết bị vĩnh viễn sau khi nhập đúng mã PIN lần đầu.</li>
-                            <li><b>Giao diện:</b> Tách riêng mục "Cài đặt Bảo mật" 🛡️ để dễ dàng quản lý quyền truy cập.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.9</span>
-                        <ul>
-                            <li><b>Hệ thống (Sửa lỗi):</b> Khôi phục toàn bộ mã nguồn điều khiển PC Mode và Recording bị lỗi trong lần cập nhật trước.</li>
-                            <li><b>Khởi tạo:</b> Tự động nhận diện thiết bị ổn định khi mở App.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.8</span>
-                        <ul>
-                            <li><b>Bảo mật:</b> Thêm tính năng "Yêu cầu mật khẩu khi mở App" trong Cài đặt. Người dùng có thể chủ động Tắt xác thực.</li>
-                            <li><b>Tab Dữ liệu:</b> Tối ưu hóa tốc độ tìm kiếm (lọc cache tức thì). Hiển thị đầy đủ mọi bản ghi khớp, không còn lọc bỏ dữ liệu trùng lặp.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.7</span>
-                        <ul>
-                            <li><b>Bảo mật (Cấp bách):</b> Sử dụng biến Session để "mở khóa" App ngay lập tức sau khi nhập đúng mật khẩu. Gỡ bỏ hoàn toàn lỗi vòng lưu vĩnh viễn trên iPhone.</li>
-                            <li><b>Tính năng:</b> Tự động ẩn cưỡng bức màn hình mật khẩu bằng class `auth-success`.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.6</span>
-                        <ul>
-                            <li><b>Bảo mật (Sửa lỗi khẩn cấp):</b> Ép ẩn cưỡng bức màn hình mật khẩu bằng CSS khi xác thực thành công, xử lý lỗi kẹt giao diện trên Mobile Safari.</li>
-                            <li><b>Hệ thống:</b> Cập nhật Version nhận diện bản vá mới nhất.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.5</span>
-                        <ul>
-                            <li><b>Bảo mật:</b> Khắc phục triệt để lỗi "Vòng lặp xác thực" bằng cơ chế kiểm tra đồng bộ, loại bỏ hoàn toàn reload gây treo App.</li>
-                            <li><b>Máy quét:</b> Ép camera hiển thị khít 100% diện tích khung vàng, xoá bỏ hoàn toàn dải mờ trên/dưới.</li>
-                            <li><b>Hệ thống:</b> Hiển thị Version trực tiếp trên màn hình nhập mật khẩu để dễ nhận diện.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.4</span>
-                        <ul>
-                            <li><b>Bảo mật:</b> Khắc phục triệt để lỗi "Vòng lặp xác thực" gây ra bởi cơ chế bất đồng bộ của IndexedDB.</li>
-                            <li><b>Giao diện:</b> Thêm thông tin Version vào màn hình yêu cầu mật khẩu.</li>
-                            <li><b>Xác thực:</b> Tối ưu hóa tốc độ kiểm tra quyền truy cập khi App khởi động và quay lại Tab.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.3</span>
-                        <ul>
-                            <li><b>Bảo mật:</b> Sử dụng IndexedDB để lưu trạng thái đăng nhập, đảm bảo ghi nhớ vĩnh viễn trên iPhone/Safari.</li>
-                            <li><b>Máy quét:</b> Ẩn hoàn toàn vùng quét mờ hình chữ nhật. 4 góc trắng bám khít 100% vào khung vàng ngoài cùng.</li>
-                            <li><b>Quét toàn vùng:</b> Mọi nơi bên trong khung vàng đều có thể quét được mã (Full Area Scan).</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.3</span>
-                        <ul>
-                            <li><b>Bảo mật:</b> Chuyển sang IndexedDB để lưu mật khẩu vĩnh viễn trên iPhone, không bị hỏi lại pass.</li>
-                            <li><b>Máy quét:</b> Ẩn vùng quét mờ hình chữ nhật. 4 góc trắng bám khít 100% vào khung vàng ngoài cùng.</li>
-                            <li><b>Khu vực quét:</b> Mọi vị trí bên trong khung vàng đều có thể quét mã (Full Area).</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.2</span>
-                        <ul>
-                            <li><b>Bảo mật:</b> Ép hệ thống kiểm tra mật khẩu ngay khi mở lại Tab ứng dụng (VisibilityChange).</li>
-                            <li><b>Máy quét:</b> Điều chỉnh khung vuông trắng bám sát khít hoàn toàn vào khung vàng ngoài cùng (1:1).</li>
-                            <li><b>Dữ liệu:</b> Tách biệt hiển thị Thời gian (nhỏ lại trong danh sách gợi ý, to rõ trong bảng chi tiết).</li>
-                            <li><b>Hệ thống:</b> Tự động xóa bộ nhớ đệm xác thực lỗi thời để tăng cường bảo mật.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.1</span>
-                        <ul>
-                            <li><b>Bảo mật:</b> Củng cố cơ chế ghi nhớ đăng nhập bằng Cookie dự phòng, khắc phục triệt để lỗi hỏi mật khẩu trên iPhone.</li>
-                            <li><b>Máy quét:</b> Loại bỏ khung quét phụ, tập trung vào khung vuông 1:1 to sát viền 95% diện tích màn hình.</li>
-                            <li><b>Dữ liệu:</b> Thêm thời gian cập nhật nội bộ và nút làm mới dữ liệu thủ công.</li>
-                            <li><b>Xem lại:</b> Nâng cấp tính năng tìm kiếm đơn hàng sang chế độ tìm kiếm Hệ thống (Cloud).</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.8.0</span>
-                        <ul>
-                            <li><b>Bảo mật:</b> Khắc phục lỗi yêu cầu mật khẩu lặp lại, hỗ trợ ghi nhớ đăng nhập vĩnh viễn trên thiết bị.</li>
-                            <li><b>Máy quét:</b> Mở rộng khung quét camera lên 95% diện tích màn hình, giúp lấy nét và bắt mã nhanh hơn.</li>
-                            <li><b>Dữ liệu:</b> Tối ưu hóa tính năng tìm kiếm tab Dữ liệu, kết nối thời gian thực với Google Sheets ổn định hơn.</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.7.3</span>
-                        <ul>
-                            <li>Tái cấu trúc Menu: Gom nhóm cài đặt thông minh và giao diện Modal chuyên nghiệp.</li>
-                            <li>Sửa lỗi chọn Camera trên Mobile: Thống nhất logic nhận diện camera.</li>
-                            <li>Nâng cấp khung hình quét: Tự động mở rộng khung quét lên 85% diện tích màn hình.</li>
-                            <li>Mở rộng thêm nhiều lựa chọn âm báo (10 kiểu âm thanh).</li>
-                        </ul>
-                    </div>
-                    <div class="changelog-item">
-                        <span class="ver-tag">v1.7.0</span>
-                        <ul>
-                            <li>Giải pháp iPhone: Lưu video vào bộ nhớ đệm app (IndexedDB) để tự động hóa hoàn toàn.</li>
-                            <li>Đổi tên nhãn "Thời gian quét" và phóng to kích thước hiển thị.</li>
-                            <li>Thêm tính năng Xoá bộ nhớ video để giải phóng dung lượng.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+            <button class="modal-btn btn-overwrite" onclick="toggleDrawer(false)">HOÀN TẤT</button>
         </div>
     </div>
 
@@ -781,25 +223,23 @@
         </div>
     </div>
 
-    <!-- --- ACTIVATION OVERLAY v2.0.0 (GOLD ERA) --- -->
-    <div id="activation-overlay" class="activation-screen" style="display: none;">
-        <div class="activation-card">
-            <div class="activation-icon-gold">🛡️</div>
-            <h2 class="gold-title">KÍCH HOẠT ỨNG DỤNG</h2>
-            <p class="activation-hint">Nhập KEY kích hoạt để sử dụng TCT APP vĩnh viễn trên thiết bị này.</p>
-            <div class="input-activation-group">
-                <input type="text" id="activation-key" maxlength="6" placeholder="******" autocomplete="off">
+    <!-- Security Passcode Modal -->
+    <div id="passcode-modal" class="modal-overlay" style="display: flex;">
+        <div class="modal-content passcode-screen">
+            <div class="modal-icon">🔒</div>
+            <h3>Yêu cầu xác thực</h3>
+            <p>Vui lòng nhập mã truy cập để sử dụng hệ thống.</p>
+            <div class="passcode-input-group">
+                <input type="password" id="passcode-input" inputmode="numeric" maxlength="6" placeholder="******">
             </div>
-            <button class="btn-activate-gold" onclick="activateApp()">KÍCH HOẠT DIAMOND EDITION</button>
-            <p id="activation-error" class="gold-error" style="display: none;">Key kích hoạt không chính xác!</p>
-            <div class="activation-footer-gold">TCT Scanner Pro — V1.1.8.3 Beta</div>
+            <button class="modal-btn btn-overwrite" onclick="validatePasscode()" style="margin-top: 20px;">XÁC NHẬN</button>
+            <p id="passcode-error" style="color: var(--danger); font-size: 0.75rem; margin-top: 10px; display: none;">Mã Pin không chính xác!</p>
         </div>
     </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
 
-    <!-- Thêm version vào app.js để bust cache -->
-    <script src="app.js?v=1.1.8.0"></script>
+    <script src="app.js"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 {
-  "name": "TCT Scanner V1.0.0 Beta",
-  "short_name": "TCT Scan",
-  "description": "Ứng dụng quét mã vạch TCT Scanner Pro V1.0.0 Beta.",
+  "name": "NVH Scanner",
+  "short_name": "NVH Scan",
+  "description": "Ứng dụng quét mã vạch đơn hàng chuyên nghiệp.",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#2D0B2D",
